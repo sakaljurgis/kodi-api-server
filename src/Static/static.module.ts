@@ -8,6 +8,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { StaticController } from './static.controller';
 import { RemoveQueryUrlRewriteMiddleware } from './UrlRewrite/url-rewrite.middleware';
+import { StaticService } from './static.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { RemoveQueryUrlRewriteMiddleware } from './UrlRewrite/url-rewrite.middle
     }),
   ],
   controllers: [StaticController],
-  providers: [],
+  providers: [StaticService],
 })
 export class StaticModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
