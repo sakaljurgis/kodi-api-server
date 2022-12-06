@@ -6,10 +6,11 @@ import {
 import { readdir, stat } from 'fs/promises';
 import { Stats } from 'fs';
 import { join } from 'path';
+import FileDto from './Dto/file.dto';
 
 @Injectable()
 export class StaticService {
-  async provideDirIndex(relPath: string): Promise<string> {
+  async provideDirIndex(relPath: string): Promise<Array<FileDto>> {
     if (relPath.indexOf('..') > -1) {
       throw new UnauthorizedException(
         'You are not authorized to visit ' + relPath,
@@ -28,35 +29,17 @@ export class StaticService {
       return null;
     }
 
-    return this.readDirectory(path, relPath);
+    return this.readDirectory(path);
   }
 
-  private async readDirectory(path: string, relPath: string) {
+  private async readDirectory(path: string): Promise<Array<FileDto>> {
     let files = await readdir(path);
-    let longestFileLength = 0;
 
     files = files.filter((fileName: string) => {
-      const fileIncluded = fileName[0] !== '.';
-      longestFileLength =
-        fileIncluded && longestFileLength < fileName.length
-          ? fileName.length
-          : longestFileLength;
-
-      return fileIncluded;
+      return fileName[0] !== '.';
     });
 
-    longestFileLength += 10;
-
-    let result: string;
-    const resultHtmlStart = `
-    <html lang="en">
-        <head><title>Index of ${relPath} </title></head>
-        <body>
-          <h1>Index of ${relPath}</h1>
-          <hr><pre>`;
-
-    result = `<a href="../">../</a>`;
-
+    const filesDtos: Array<FileDto> = [];
     for (const file of files) {
       const stats: Stats | false = await stat(join(path, file)).catch(
         () => false,
@@ -65,24 +48,16 @@ export class StaticService {
       if (stats === false) {
         continue;
       }
-      const arrDate: Array<string> = stats.birthtime.toUTCString().split(' ');
-      const strDate: string =
-        ' '.repeat(longestFileLength - file.length) +
-        `${arrDate[1]}-${arrDate[2]}-${arrDate[3]} ${arrDate[4]}`;
+      const fileDto = new FileDto(
+        file,
+        stats.size,
+        stats.birthtime,
+        stats.isDirectory(),
+      );
 
-      if (stats.isDirectory()) {
-        const strSize = ' '.repeat(19) + '-';
-        result += '\n' + `<a href="${file}/">${file}/</a>${strDate + strSize}`;
-        continue;
-      }
-      let strSize = stats.size.toString();
-      strSize = ' '.repeat(20 - strSize.length) + strSize;
-
-      result += '\n' + `<a href="${file}">${file}</a> ${strDate + strSize}`;
+      filesDtos.push(fileDto);
     }
 
-    const resultHtmlEnd = `</pre><hr></body></html>`;
-
-    return resultHtmlStart + result + resultHtmlEnd;
+    return filesDtos;
   }
 }

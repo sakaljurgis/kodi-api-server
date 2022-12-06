@@ -6,7 +6,7 @@ A rewrite attempt from "vanilla" node.js into framework based (Nest.js).
 
 ## License
 
-No licence (Nest is MIT)
+No licence
 
 ## Below are left from nest readme
 
