@@ -5,7 +5,7 @@ import { Request } from 'express';
 
 @Controller('api')
 export class KodiApiController {
-  @Get('*')
+  @Get()
   getMainMenu(
     @RequestRange() requestedRange: RequestRangeBytes,
     @Req() request: Request,
