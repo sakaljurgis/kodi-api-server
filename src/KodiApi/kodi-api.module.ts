@@ -8,11 +8,12 @@ import { KodiApiController } from './kodi-api.controller';
 import { KodiApiUrlRewriteMiddleware } from './UrlRewrite/url-rewrite.middleware';
 import { LrtModule } from './LRT/lrt.module';
 import { KodiApiService } from './kodi-api.service';
+import { KodiApiResponseFactory } from './kodi-api-response.factory';
 
 @Module({
   imports: [LrtModule],
   controllers: [KodiApiController],
-  providers: [KodiApiService],
+  providers: [KodiApiService, KodiApiResponseFactory],
 })
 export class KodiApiModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
