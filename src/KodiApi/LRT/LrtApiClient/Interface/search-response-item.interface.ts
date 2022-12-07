@@ -1,0 +1,32 @@
+interface SearchResponseItemInterface {
+  photo_horizontal: number;
+  category_img_path_postfix: string;
+  age_restriction: string;
+  badges_html: string;
+  article_has_audiovideo: number;
+  img_w_h: string | number;
+  photo_horizontal_small: number;
+  category_title: string;
+  item_date: string;
+  category_img_path_prefix: string;
+  img_path_prefix: string;
+  is_audio: number;
+  category_url: string;
+  img_path_postfix: string;
+  heritage: number;
+  type: number;
+  fb_share_count: number;
+  id: number;
+  title: string;
+  url: string;
+  photo_id: number;
+  main_category_title: string;
+  is_video: number;
+  channel: number;
+  curr_category_title: string;
+  is_videoteka: number;
+  read_count: number;
+  n18: number;
+  subtitle: string;
+  photo_count: number;
+}
