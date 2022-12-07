@@ -43,6 +43,7 @@ export default class ResponseItem {
   setActionSearch() {
     this.action = 'search';
     delete this.isPlayable;
+    delete this.mediatype;
     this.isFolder = false;
 
     return this;

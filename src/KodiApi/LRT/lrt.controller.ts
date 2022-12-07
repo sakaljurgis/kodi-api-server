@@ -20,6 +20,15 @@ export class LrtController {
     };
   }
 
+  @Get('recent')
+  getRecent(@Req() request: Request) {
+    return {
+      mod: 'lrt',
+      path: request.url,
+      recent: true,
+    };
+  }
+
   @Get('cat/:id')
   getCategory(@Req() request: Request, @Param('id') id: number) {
     return {

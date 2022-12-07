@@ -7,6 +7,7 @@ export default class ApiResponse {
   category: string;
   play: string;
   msgBoxOK: string;
+  nosort: boolean;
 
   setTitle(title) {
     this.category = title;
@@ -30,5 +31,13 @@ export default class ApiResponse {
 
   addMessage(message) {
     this.msgBoxOK = message;
+
+    return this;
+  }
+
+  setNoSort(value = true) {
+    this.nosort = value;
+
+    return this;
   }
 }
