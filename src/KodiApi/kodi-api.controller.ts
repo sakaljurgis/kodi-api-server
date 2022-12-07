@@ -1,18 +1,11 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import RequestRangeBytes from 'src/RequestRange/request-range-bytes.class';
-import { RequestRange } from 'src/RequestRange/request-range.decorator';
-import { Request } from 'express';
+import { Controller, Get } from '@nestjs/common';
+import { KodiApiService } from './kodi-api.service';
 
 @Controller('api')
 export class KodiApiController {
+  constructor(private readonly kodiApiService: KodiApiService) {}
   @Get()
-  getMainMenu(
-    @RequestRange() requestedRange: RequestRangeBytes,
-    @Req() request: Request,
-  ) {
-    return {
-      range: requestedRange,
-      path: request.url,
-    };
+  getMainMenu() {
+    return this.kodiApiService.getMainMenu();
   }
 }

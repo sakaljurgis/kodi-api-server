@@ -1,21 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import ApiResponse from './Dto/api-response.dto';
-import NotificationResponse from './Dto/notification-response';
+import { KodiApiResponseFactory } from './kodi-api-response.factory';
 
 @Injectable()
 export class KodiApiService {
-  getMainMenu(): string {
-    return 'Hello World!';
+  constructor(
+    private readonly kodiApiResponseFactory: KodiApiResponseFactory,
+  ) {}
+  getMainMenu(): ApiResponse {
+    const apiResponse = this.kodiApiResponseFactory.createApiResponse();
+
+    apiResponse.setTitle('Menu');
+    this.createMainMenu(apiResponse);
+
+    return apiResponse;
   }
 
-  createApiResponse(): ApiResponse {
-    return new ApiResponse();
-  }
+  private createMainMenu(apiResponse: ApiResponse): void {
+    const items = {
+      all: 'All files',
+      torr: 'Torr',
+      lrt: 'LRT.lt',
+    };
 
-  createNotificationResponse(
-    message: string,
-    refreshContainer = true,
-  ): NotificationResponse {
-    return new NotificationResponse(message, refreshContainer);
+    for (const [path, label] of Object.entries(items)) {
+      apiResponse.createItem().setLabel(label).setToFolder().setPath(path);
+    }
   }
 }
