@@ -1,10 +1,15 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { LrtService } from './lrt.service';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Controller('api/lrt')
 export class LrtController {
-  constructor(private readonly lrtService: LrtService) {}
+  constructor(
+    private readonly lrtService: LrtService,
+    private readonly httpService: HttpService,
+  ) {}
 
   @Get()
   getLrtMenu() {
@@ -21,11 +26,15 @@ export class LrtController {
   }
 
   @Get('recent')
-  getRecent(@Req() request: Request) {
+  async getRecent(@Req() request: Request) {
+    const resp = await firstValueFrom(
+      this.httpService.get('http://localhost:3000/api'),
+    );
     return {
       mod: 'lrt',
       path: request.url,
       recent: true,
+      resp: resp.data,
     };
   }
 
