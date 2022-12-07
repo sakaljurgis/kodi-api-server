@@ -1,14 +1,14 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { LrtService } from './lrt.service';
 
 @Controller('api/lrt')
 export class LrtController {
+  constructor(private readonly lrtService: LrtService) {}
+
   @Get()
-  getLrtMenu(@Req() request: Request) {
-    return {
-      mod: 'lrt - menu',
-      path: request.url,
-    };
+  getLrtMenu() {
+    return this.lrtService.getMainMenu();
   }
 
   @Get('search')

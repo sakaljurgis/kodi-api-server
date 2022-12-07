@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import ApiResponse from './Dto/api-response.dto';
-import NotificationResponse from './Dto/notification-response';
+import NotificationResponse from './Dto/notification-response.dto';
 
 @Injectable()
 export class KodiApiResponseFactory {

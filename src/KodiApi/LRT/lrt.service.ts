@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import ApiResponse from '../Dto/api-response.dto';
+import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 
 @Injectable()
 export class LrtService {
-  getMainMenu(): string {
-    return 'Hello World!';
+  constructor(
+    private readonly kodiApiResponseFactory: KodiApiResponseFactory,
+  ) {}
+  getMainMenu(): ApiResponse {
+    return this.kodiApiResponseFactory.createApiResponse();
   }
 }

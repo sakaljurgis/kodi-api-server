@@ -7,6 +7,7 @@ export class KodiApiService {
   constructor(
     private readonly kodiApiResponseFactory: KodiApiResponseFactory,
   ) {}
+
   getMainMenu(): ApiResponse {
     const apiResponse = this.kodiApiResponseFactory.createApiResponse();
 
