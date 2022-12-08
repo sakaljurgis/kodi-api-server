@@ -9,11 +9,15 @@ import { join } from 'path';
 import { StaticController } from './static.controller';
 import { RemoveQueryUrlRewriteMiddleware } from './UrlRewrite/url-rewrite.middleware';
 import { StaticService } from './static.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '../../../static'),
+      rootPath: join(__dirname, process.env.STATIC_SERVE_FOLDER),
     }),
   ],
   controllers: [StaticController],
