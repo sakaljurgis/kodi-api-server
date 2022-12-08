@@ -1,10 +1,13 @@
-interface SearchResponseInterface {
+import { SearchResponseItemInterface } from './search-response-item.interface';
+
+export interface SearchResponseInterface {
   q: string;
   meta: {
-    time: number;
-    total: number;
-    total_found: number;
+    time: string;
+    total: string;
+    total_found: string;
   };
-  total_found: string | number;
+  page: string;
+  total_found: string;
   items: Array<SearchResponseItemInterface>;
 }

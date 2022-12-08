@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
+import { LrtApiClient } from './LrtApiClient/lrt-api.client';
 
 @Injectable()
 export class LrtService {
   constructor(
     private readonly kodiApiResponseFactory: KodiApiResponseFactory,
+    private readonly lrtApiClient: LrtApiClient,
   ) {}
+
   getMainMenu(): ApiResponse {
     const apiResponse = this.kodiApiResponseFactory.createApiResponse();
     apiResponse.setNoSort().setTitle('LRT.lt');
@@ -17,7 +20,6 @@ export class LrtService {
 
   private createMainMenu(apiResponse: ApiResponse): void {
     const items = {
-      'lrt/recent': 'neseniai ieškoti',
       'lrt/tema/vaikams': 'vaikams',
       'lrt/tema/sportas': 'sportas',
       'lrt/tema/kultura': 'kultura',
@@ -34,5 +36,50 @@ export class LrtService {
     for (const [path, label] of Object.entries(items)) {
       apiResponse.createItem().setLabel(label).setToFolder().setPath(path);
     }
+  }
+
+  async searchCategories(query: string): Promise<ApiResponse> {
+    const searchResponseDto = await this.lrtApiClient.searchCategories(query);
+    const apiResponse = this.kodiApiResponseFactory.createApiResponse();
+
+    apiResponse.setTitle('LRT ' + query);
+    for (const itemDto of searchResponseDto.items) {
+      apiResponse
+        .createItem()
+        .setLabel(itemDto.label)
+        .setThumb(itemDto.thumb)
+        .setPath('lrt/cat/' + itemDto.categoryId)
+        .setToFolder();
+    }
+
+    return apiResponse;
+  }
+
+  async getCategory(catId: string): Promise<ApiResponse> {
+    const searchResponseDto = await this.lrtApiClient.getCategory(catId);
+    const apiResponse = this.kodiApiResponseFactory.createApiResponse();
+    apiResponse.setTitle('LRT.lt');
+
+    for (const itemDto of searchResponseDto.items) {
+      apiResponse
+        .createItem()
+        .setLabel(itemDto.label + ' ' + itemDto.date)
+        .setDate(itemDto.date)
+        .setThumb(itemDto.thumb)
+        .setPath('lrt/play' + itemDto.url)
+        .setToPlayable(true)
+        .setPlot(itemDto.date);
+    }
+
+    return apiResponse;
+  }
+
+  async getPlayableItem(mediaUrl: string): Promise<ApiResponse> {
+    const playableUrl = await this.lrtApiClient.getPlaylist(mediaUrl);
+    const apiResponse = this.kodiApiResponseFactory.createApiResponse();
+    apiResponse.setTitle('LRT.lt');
+    apiResponse.setToPlayable(playableUrl);
+
+    return apiResponse;
   }
 }

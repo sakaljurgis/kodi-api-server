@@ -1,64 +1,36 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { LrtService } from './lrt.service';
-import { LrtApiClient } from './lrt-api.client';
+import ApiResponse from '../Dto/api-response.dto';
 
 @Controller('api/lrt')
 export class LrtController {
-  constructor(
-    private readonly lrtService: LrtService,
-    private readonly lrtApiClient: LrtApiClient,
-  ) {}
+  constructor(private readonly lrtService: LrtService) {}
 
   @Get()
-  getLrtMenu() {
+  getLrtMenu(): ApiResponse {
     return this.lrtService.getMainMenu();
   }
 
   @Get('search')
-  getSearch(@Req() request: Request, @Query('search') search: string) {
-    return {
-      mod: 'lrt',
-      path: request.url,
-      search: search ?? 'no',
-    };
-  }
-
-  @Get('recent')
-  async getRecent(@Req() request: Request) {
-    return {
-      mod: 'lrt',
-      path: request.url,
-      recent: true,
-    };
+  getSearch(@Query('search') search: string): Promise<ApiResponse> {
+    return this.lrtService.searchCategories(search);
   }
 
   @Get('cat/:id')
-  async getCategory(@Req() request: Request, @Param('id') id: number) {
-    return {
-      mod: 'lrt - category',
-      path: request.url,
-      category: id,
-    };
+  async getCategory(@Param('id') id: string): Promise<ApiResponse> {
+    return this.lrtService.getCategory(id);
   }
 
   @Get('tema/:topic')
-  async getTema(@Req() request: Request, @Param('topic') topic: string) {
-    const resp = await this.lrtApiClient.getSearch(topic);
-    return {
-      mod: 'lrt - category',
-      path: request.url,
-      topic: resp,
-    };
+  async getTema(@Param('topic') topic: string): Promise<ApiResponse> {
+    return this.lrtService.searchCategories(topic);
   }
 
   @Get('play/*')
-  getPlay(@Req() request: Request, @Param() params: string[]) {
-    const playPath = params[0];
-    return {
-      mod: 'lrt - play',
-      path: request.url,
-      playPath: playPath,
-    };
+  async getPlay(@Req() request: Request, @Param() params: string[]) {
+    const mediaUrl = params[0];
+
+    return this.lrtService.getPlayableItem(mediaUrl);
   }
 }

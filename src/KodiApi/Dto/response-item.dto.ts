@@ -3,6 +3,7 @@ import ContextMenu from './context-menu.dto';
 export default class ResponseItem {
   isFolder = false;
   isPlayable = true;
+  IsPlayable = true; //backwards compatability
   mediatype: string;
   action: 'query' | 'search';
   label: string;
@@ -12,6 +13,7 @@ export default class ResponseItem {
   duration: number;
   thumb: string;
   contextMenus: Array<ContextMenu>;
+  date: string;
 
   constructor() {
     this.setToPlayable();
@@ -20,6 +22,7 @@ export default class ResponseItem {
   setToFolder() {
     this.isFolder = true;
     delete this.isPlayable;
+    delete this.IsPlayable;
     delete this.mediatype;
     delete this.action;
 
@@ -29,6 +32,7 @@ export default class ResponseItem {
   setToPlayable(withQueryAction = false) {
     this.isFolder = false;
     this.isPlayable = true;
+    this.IsPlayable = true;
     this.mediatype = 'video';
 
     // if path provided is not to a video, but additional api request is needed
@@ -43,6 +47,7 @@ export default class ResponseItem {
   setActionSearch() {
     this.action = 'search';
     delete this.isPlayable;
+    delete this.IsPlayable;
     delete this.mediatype;
     this.isFolder = false;
 
@@ -60,13 +65,13 @@ export default class ResponseItem {
     return this;
   }
 
-  setSize(size) {
+  setSize(size: number) {
     this.size = size;
 
     return this;
   }
 
-  setPlot(plot) {
+  setPlot(plot: string) {
     this.plot = plot;
 
     return this;
@@ -78,8 +83,14 @@ export default class ResponseItem {
     return this;
   }
 
-  setThumb(thumb) {
+  setThumb(thumb: string) {
     this.thumb = thumb;
+
+    return this;
+  }
+
+  setDate(date: string) {
+    this.date = date;
 
     return this;
   }

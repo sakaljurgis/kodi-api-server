@@ -1,4 +1,4 @@
-interface SearchResponseItemInterface {
+export interface SearchResponseItemInterface {
   photo_horizontal: number;
   category_img_path_postfix: string;
   age_restriction: string;
@@ -29,4 +29,5 @@ interface SearchResponseItemInterface {
   n18: number;
   subtitle: string;
   photo_count: number;
+  category_id: string;
 }
