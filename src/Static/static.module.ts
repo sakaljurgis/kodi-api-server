@@ -5,19 +5,15 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { StaticController } from './static.controller';
 import { RemoveQueryUrlRewriteMiddleware } from './UrlRewrite/url-rewrite.middleware';
 import { StaticService } from './static.service';
-import { ConfigModule } from '@nestjs/config';
+import { configService } from '../config/config.service';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, process.env.STATIC_SERVE_FOLDER),
+      rootPath: configService.getStaticFolder(),
     }),
   ],
   controllers: [StaticController],

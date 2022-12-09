@@ -7,6 +7,7 @@ import { readdir, stat } from 'fs/promises';
 import { Stats } from 'fs';
 import { join } from 'path';
 import FileDto from './Dto/file.dto';
+import { configService } from '../config/config.service';
 
 @Injectable()
 export class StaticService {
@@ -17,7 +18,7 @@ export class StaticService {
       );
     }
 
-    const path = join(__dirname, process.env.STATIC_SERVE_FOLDER, relPath);
+    const path = join(configService.getStaticFolder(), relPath);
 
     const stats: Stats | false = await stat(path).catch(() => false);
 
