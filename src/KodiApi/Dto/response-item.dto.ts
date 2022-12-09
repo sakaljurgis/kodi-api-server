@@ -14,6 +14,7 @@ export default class ResponseItem {
   thumb: string;
   contextMenus: Array<ContextMenu>;
   date: string;
+  searchFor: string;
 
   constructor() {
     this.setToPlayable();
@@ -44,12 +45,16 @@ export default class ResponseItem {
     return this;
   }
 
-  setActionSearch() {
+  setActionSearch(searchFor: string | null = null) {
     this.action = 'search';
     delete this.isPlayable;
     delete this.IsPlayable;
     delete this.mediatype;
     this.isFolder = false;
+
+    if (searchFor) {
+      this.searchFor = searchFor;
+    }
 
     return this;
   }

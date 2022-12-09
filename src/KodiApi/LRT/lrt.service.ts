@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { LrtApiClient } from './LrtApiClient/lrt-api.client';
+import { RecentSearchesService } from '../RecentSearches/recent-searches.service';
 
 @Injectable()
 export class LrtService {
   constructor(
     private readonly kodiApiResponseFactory: KodiApiResponseFactory,
     private readonly lrtApiClient: LrtApiClient,
+    private readonly recentSearchesService: RecentSearchesService
   ) {}
 
   getMainMenu(): ApiResponse {
@@ -19,7 +21,9 @@ export class LrtService {
   }
 
   private createMainMenu(apiResponse: ApiResponse): void {
+    //todo - refactor to 5 most recent searches + viskas?
     const items = {
+      'lrt/recent': 'neseniai ieskoti',
       'lrt/tema/vaikams': 'vaikams',
       'lrt/tema/sportas': 'sportas',
       'lrt/tema/kultura': 'kultura',
@@ -81,5 +85,9 @@ export class LrtService {
     apiResponse.setToPlayable(playableUrl);
 
     return apiResponse;
+  }
+
+  async getRecentSearches(): Promise<ApiResponse> {
+    return this.recentSearchesService.getRecentSearches('lrt', 'lrt/search');
   }
 }

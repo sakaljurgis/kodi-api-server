@@ -5,7 +5,7 @@ import { join } from 'path';
 
 env.config();
 
-class ConfigService {
+export class ConfigService {
   public getEnv(key: string): any {
     return process.env[key];
   }
@@ -29,6 +29,10 @@ class ConfigService {
   }
 
   public getStaticFolder(): string {
+    return join(this.getRootPath(), this.getEnv('STATIC_SERVE_FOLDER'));
+  }
+
+  public getRecentSearchesFolder(): string {
     return join(this.getRootPath(), this.getEnv('STATIC_SERVE_FOLDER'));
   }
 
