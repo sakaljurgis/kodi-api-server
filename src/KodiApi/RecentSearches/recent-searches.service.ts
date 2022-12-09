@@ -35,15 +35,19 @@ export class RecentSearchesService {
     }
     data.push(term);
     const rawData = JSON.stringify(data);
-    const filePath = join(this.configService.getRecentSearchesFolder(), module);
+    const filePath = this.getFilePath(module);
 
     await writeFile(filePath, rawData);
   }
 
   private async getRecentSearchesData(module: string): Promise<Array<string>> {
-    const filePath = join(this.configService.getRecentSearchesFolder(), module);
+    const filePath = this.getFilePath(module);
     const rawData = '' + (await readFile(filePath).catch(() => '[]'));
 
     return JSON.parse(rawData);
+  }
+
+  private getFilePath(module: string): string {
+    return join(this.configService.getRecentSearchesFolder(), module + '.json');
   }
 }

@@ -33,7 +33,7 @@ export class ConfigService {
   }
 
   public getRecentSearchesFolder(): string {
-    return join(this.getRootPath(), this.getEnv('STATIC_SERVE_FOLDER'));
+    return join(this.getRootPath(), this.getEnv('RECENT_SEARCHES_FOLDER'));
   }
 
   private getRootPath(): string {
