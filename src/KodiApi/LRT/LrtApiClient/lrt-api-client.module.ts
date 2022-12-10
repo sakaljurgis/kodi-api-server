@@ -12,7 +12,7 @@ import { LrtCategory } from './Entity/lrt-category.entity';
     HttpModule.register({
       withCredentials: true,
     }),
-    TypeOrmModule.forFeature([LrtCategory])
+    TypeOrmModule.forFeature([LrtCategory]),
   ],
   providers: [
     LrtApiSearchClient,

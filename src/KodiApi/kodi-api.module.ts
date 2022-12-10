@@ -9,9 +9,10 @@ import { KodiApiUrlRewriteMiddleware } from './UrlRewrite/url-rewrite.middleware
 import { LrtModule } from './LRT/lrt.module';
 import { KodiApiService } from './kodi-api.service';
 import { KodiApiResponseFactory } from './kodi-api-response.factory';
+import { AllFilesModule } from './AllFiles/all-files.module';
 
 @Module({
-  imports: [LrtModule],
+  imports: [LrtModule, AllFilesModule],
   controllers: [KodiApiController],
   providers: [KodiApiService, KodiApiResponseFactory],
 })
