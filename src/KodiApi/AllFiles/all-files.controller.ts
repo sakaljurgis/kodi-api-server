@@ -11,6 +11,11 @@ export class AllFilesController {
     return this.allFilesService.getMenu();
   }
 
+  @Get('titles')
+  async titles() {
+    return this.allFilesService.getAllTitles();
+  }
+
   @Get('show')
   getShows() {
     return { will: 'show shows list' };

@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { TitleEntity } from './Entity/title.entity';
 
 @Injectable()
 export class AllFilesService {
-  constructor(private readonly koiApiResponseFactory: KodiApiResponseFactory) {}
+  constructor(
+    private readonly koiApiResponseFactory: KodiApiResponseFactory,
+    @InjectRepository(TitleEntity)
+    private titleRepository: Repository<TitleEntity>,
+  ) {}
 
   getMenu(): ApiResponse {
     const apiResponse = this.koiApiResponseFactory.createApiResponse();
@@ -20,5 +27,10 @@ export class AllFilesService {
       .setToFolder();
 
     return apiResponse;
+  }
+
+  async getAllTitles() {
+    return this.titleRepository.find();
+    //return { todo: true };
   }
 }

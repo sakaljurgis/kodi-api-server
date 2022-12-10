@@ -2,6 +2,7 @@ import * as env from 'dotenv';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { LrtCategory } from '../KodiApi/LRT/LrtApiClient/Entity/lrt-category.entity';
 import { join } from 'path';
+import { TitleEntity } from '../KodiApi/AllFiles/Entity/title.entity';
 
 env.config();
 
@@ -20,7 +21,7 @@ export class ConfigService {
     return {
       type: 'sqlite',
       database: this.getEnv('DB_PATH'),
-      entities: [LrtCategory],
+      entities: [LrtCategory, TitleEntity],
     };
   }
 

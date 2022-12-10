@@ -2,7 +2,6 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class LrtCategory {
-
   @PrimaryColumn({ name: 'category_url' })
   categoryUrl: string;
 
