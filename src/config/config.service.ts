@@ -3,6 +3,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { LrtCategory } from '../KodiApi/LRT/LrtApiClient/Entity/lrt-category.entity';
 import { join } from 'path';
 import { TitleEntity } from '../KodiApi/AllFiles/Entity/title.entity';
+import { FileEntity } from '../KodiApi/AllFiles/Entity/file.entity';
 
 env.config();
 
@@ -21,7 +22,7 @@ export class ConfigService {
     return {
       type: 'sqlite',
       database: this.getEnv('DB_PATH'),
-      entities: [LrtCategory, TitleEntity],
+      entities: [LrtCategory, TitleEntity, FileEntity],
     };
   }
 

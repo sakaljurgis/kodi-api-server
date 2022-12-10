@@ -4,6 +4,8 @@ import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TitleEntity } from './Entity/title.entity';
+import { FileEntity } from './Entity/file.entity';
+import { TitleTypeEnum } from './Enum/title-type.enum';
 
 @Injectable()
 export class AllFilesService {
@@ -11,6 +13,8 @@ export class AllFilesService {
     private readonly koiApiResponseFactory: KodiApiResponseFactory,
     @InjectRepository(TitleEntity)
     private titleRepository: Repository<TitleEntity>,
+    @InjectRepository(FileEntity)
+    private fileRepository: Repository<FileEntity>,
   ) {}
 
   getMenu(): ApiResponse {
@@ -29,8 +33,24 @@ export class AllFilesService {
     return apiResponse;
   }
 
-  async getAllTitles() {
-    return this.titleRepository.find();
-    //return { todo: true };
+  async getListOfTitles(type: TitleTypeEnum): Promise<ApiResponse> {
+    const entities = await this.titleRepository
+      .createQueryBuilder()
+      .setFindOptions({ relations: { files: true } })
+      .where('type = :type', { type: type })
+      .andWhere('deleted = :deleted', { deleted: false })
+      .getMany();
+
+    const response = this.koiApiResponseFactory.createApiResponse();
+    response.setTitle('All ' + type + 's');
+    entities.forEach((entity) => {
+      response
+        .createItem()
+        .setLabel(entity.title)
+        .setToFolder()
+        .setPlot(entity.files.length + ' files');
+    });
+
+    return response;
   }
 }

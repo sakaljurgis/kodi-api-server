@@ -1,6 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { AllFilesService } from './all-files.service';
+import { TitleTypeEnum } from './Enum/title-type.enum';
 
 @Controller('api/all')
 export class AllFilesController {
@@ -11,19 +12,14 @@ export class AllFilesController {
     return this.allFilesService.getMenu();
   }
 
-  @Get('titles')
-  async titles() {
-    return this.allFilesService.getAllTitles();
-  }
-
   @Get('show')
-  getShows() {
-    return { will: 'show shows list' };
+  getShows(): Promise<ApiResponse> {
+    return this.allFilesService.getListOfTitles(TitleTypeEnum.show);
   }
 
   @Get('movie')
-  getMovies() {
-    return { will: 'show movies list' };
+  async getMovies(): Promise<ApiResponse> {
+    return this.allFilesService.getListOfTitles(TitleTypeEnum.movie);
   }
 
   @Get('play')

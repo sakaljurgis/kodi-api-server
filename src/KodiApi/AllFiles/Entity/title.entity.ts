@@ -1,14 +1,18 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 import { TitleTypeEnum } from '../Enum/title-type.enum';
+import { FileEntity } from './file.entity';
 
 @Entity('titles')
 export class TitleEntity {
-  @PrimaryColumn({ name: 'id' })
+  @PrimaryColumn()
   id: number;
 
-  @Column({ name: 'title' })
+  @Column()
   title: string;
 
-  @Column({ name: 'type' })
+  @Column()
   type: TitleTypeEnum;
+
+  @OneToMany(() => FileEntity, (file) => file.title)
+  files: FileEntity[];
 }
