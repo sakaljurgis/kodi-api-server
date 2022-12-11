@@ -22,18 +22,19 @@ export class AllFilesController {
     return this.allFilesService.getListOfTitles(TitleTypeEnum.movie);
   }
 
-  @Get('play')
-  play() {
-    return { will: 'return a playable stream' };
+  @Get('play/:fileId')
+  play(@Param('fileId') fileId: string) {
+    return { will: 'return a playable stream of ' + fileId };
   }
 
   @Get(':titleId/:seasonId?')
   getTitle(
-    @Param('titleId') titleId: number,
-    @Param('seasonId') seasonId: number,
-  ) {
-    return {
-      will: 'show title videos list title ' + titleId + ', season ' + seasonId,
-    };
+    @Param('titleId') titleId: string, //actually a number, how to cast?
+    @Param('seasonId') seasonId: string, //actually a number, how to cast?
+  ): Promise<ApiResponse> {
+    return this.allFilesService.loadTitle(
+      parseInt(titleId),
+      parseInt(seasonId),
+    );
   }
 }
