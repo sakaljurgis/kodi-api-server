@@ -6,7 +6,7 @@ import { SearchResponseDto } from '../Dto/search-response.dto';
 import { SearchResponseItemDto } from '../Dto/search-response-item.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LrtCategory } from '../Entity/lrt-category.entity';
-import { FindOptionsUtils, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class LrtApiSearchClient {

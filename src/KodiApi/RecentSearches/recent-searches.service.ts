@@ -8,9 +8,7 @@ import { readFile, writeFile } from 'fs/promises';
 @Injectable()
 export class RecentSearchesService {
   private readonly configService: ConfigService;
-  constructor(
-    private readonly kodiApiResponseFactory: KodiApiResponseFactory,
-  ) {
+  constructor(private readonly kodiApiResponseFactory: KodiApiResponseFactory) {
     this.configService = configService;
   }
   async getRecentSearches(module: string, path: string): Promise<ApiResponse> {
@@ -48,6 +46,9 @@ export class RecentSearchesService {
   }
 
   private getFilePath(module: string): string {
-    return join(this.configService.getRecentSearchesFolder(), module + '.json');
+    return join(
+      this.configService.getPaths().getRecentSearchesFolder(),
+      module + '.json',
+    );
   }
 }

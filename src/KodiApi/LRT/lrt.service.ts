@@ -9,7 +9,7 @@ export class LrtService {
   constructor(
     private readonly kodiApiResponseFactory: KodiApiResponseFactory,
     private readonly lrtApiClient: LrtApiClient,
-    private readonly recentSearchesService: RecentSearchesService
+    private readonly recentSearchesService: RecentSearchesService,
   ) {}
 
   getMainMenu(): ApiResponse {

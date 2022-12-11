@@ -2,7 +2,6 @@ import { NestMiddleware } from '@nestjs/common';
 import { NextFunction } from 'express';
 import { Request, Response } from 'express';
 import { appendFile } from 'fs';
-import { join } from 'path';
 import { configService } from '../config/config.service';
 
 export class RequestLogMiddleware implements NestMiddleware {
@@ -33,7 +32,7 @@ export class RequestLogMiddleware implements NestMiddleware {
 
   private log(message: string) {
     const strTime = new Date().toISOString();
-    const logFile = configService.getStaticRequestsLogPath();
+    const logFile = configService.getPaths().getStaticRequestsLogPath();
     appendFile(logFile, strTime + ' ' + message + '\n', function (err) {
       if (err) {
         console.log('error logging ' + message);

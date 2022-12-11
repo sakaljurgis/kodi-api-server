@@ -18,7 +18,7 @@ export class StaticService {
       );
     }
 
-    const path = join(configService.getStaticFolder(), relPath);
+    const path = join(configService.getPaths().getStaticFolder(), relPath);
 
     const stats: Stats | false = await stat(path).catch(() => false);
 

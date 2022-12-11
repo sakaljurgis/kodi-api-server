@@ -13,7 +13,7 @@ import { configService } from '../config/config.service';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: configService.getStaticFolder(),
+      rootPath: configService.getPaths().getStaticFolder(),
     }),
   ],
   controllers: [StaticController],

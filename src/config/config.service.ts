@@ -1,13 +1,14 @@
 import * as env from 'dotenv';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { LrtCategory } from '../KodiApi/LRT/LrtApiClient/Entity/lrt-category.entity';
-import { join } from 'path';
-import { TitleEntity } from '../KodiApi/AllFiles/Entity/title.entity';
-import { FileEntity } from '../KodiApi/AllFiles/Entity/file.entity';
+import { TypeOrmConfig } from './type-orm.config';
+import { PathsConfig } from './paths.config';
 
 env.config();
 
 export class ConfigService {
+  private typeOrmConfig: TypeOrmConfig = new TypeOrmConfig(this);
+  private pathsConfig: PathsConfig = new PathsConfig(this);
+
   public getEnv(key: string): any {
     return process.env[key];
   }
@@ -19,27 +20,11 @@ export class ConfigService {
   }
 
   public getTypeOrmConfig(): TypeOrmModuleOptions {
-    return {
-      type: 'sqlite',
-      database: this.getEnv('DB_PATH'),
-      entities: [LrtCategory, TitleEntity, FileEntity],
-    };
+    return this.typeOrmConfig;
   }
 
-  public getStaticRequestsLogPath(): string {
-    return join(this.getRootPath(), this.getEnv('LOG_FILE_REQUESTS'));
-  }
-
-  public getStaticFolder(): string {
-    return join(this.getRootPath(), this.getEnv('STATIC_SERVE_FOLDER'));
-  }
-
-  public getRecentSearchesFolder(): string {
-    return join(this.getRootPath(), this.getEnv('RECENT_SEARCHES_FOLDER'));
-  }
-
-  private getRootPath(): string {
-    return join(__dirname, '../..');
+  public getPaths(): PathsConfig {
+    return this.pathsConfig;
   }
 }
 
