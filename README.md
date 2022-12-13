@@ -1,4 +1,4 @@
-An API server for personal KODI plugin.
+An API server for personal [KODI plugin](https://github.com/sakaljurgis/plugin.video.sklk).
 
 ## Description
 
