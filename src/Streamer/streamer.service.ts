@@ -20,7 +20,9 @@ export class StreamerService {
   ): Promise<void> {
     const stats: Stats | false = await stat(filePath).catch(() => false);
     if (stats === false) {
-      throw new NotFoundException('file not found');
+      this.sendResponse(response, 404, {});
+
+      return;
     }
 
     const requestRange = this.requestRangeService.getRangeFromHeaders(

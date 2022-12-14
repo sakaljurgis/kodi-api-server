@@ -138,7 +138,12 @@ export class AllFilesService {
     const entity = await this.fileRepository.findOne({ where: { id: id } });
 
     if (entity === null) {
-      throw new NotFoundException('entity not found id: ' + fileId);
+      response
+        .status(404)
+        .send('entity not found id: ' + fileId)
+        .end();
+
+      return;
     }
 
     this.streamerFacade.streamFile(request, response, entity.path);
