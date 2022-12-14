@@ -5,9 +5,13 @@ import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TitleEntity } from './Entity/title.entity';
 import { FileEntity } from './Entity/file.entity';
+import { StreamerModule } from '../../Streamer/streamer.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TitleEntity, FileEntity])],
+  imports: [
+    TypeOrmModule.forFeature([TitleEntity, FileEntity]),
+    StreamerModule,
+  ],
   controllers: [AllFilesController],
   providers: [AllFilesService, KodiApiResponseFactory],
 })

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import { TitleEntity } from './Entity/title.entity';
 import { FileEntity } from './Entity/file.entity';
 import { TitleTypeEnum } from './Enum/title-type.enum';
+import { StreamerFacade } from '../../Streamer/streamer.facade';
+import { Request, Response } from 'express';
 
 @Injectable()
 export class AllFilesService {
@@ -15,6 +17,7 @@ export class AllFilesService {
     private titleRepository: Repository<TitleEntity>,
     @InjectRepository(FileEntity)
     private fileRepository: Repository<FileEntity>,
+    private readonly streamerFacade: StreamerFacade,
   ) {}
 
   getMenu(): ApiResponse {
@@ -124,5 +127,20 @@ export class AllFilesService {
     }
 
     return apiResponse;
+  }
+
+  async play(
+    fileId: string,
+    request: Request,
+    response: Response,
+  ): Promise<void> {
+    const id = parseInt(fileId);
+    const entity = await this.fileRepository.findOne({ where: { id: id } });
+
+    if (entity === null) {
+      throw new NotFoundException('entity not found id: ' + fileId);
+    }
+
+    this.streamerFacade.streamFile(request, response, entity.path);
   }
 }

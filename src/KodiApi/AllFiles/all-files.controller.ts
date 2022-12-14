@@ -1,7 +1,8 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Head, Param, Req, Res } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { AllFilesService } from './all-files.service';
 import { TitleTypeEnum } from './Enum/title-type.enum';
+import { Request, Response } from 'express';
 
 @Controller('api/all')
 export class AllFilesController {
@@ -23,8 +24,13 @@ export class AllFilesController {
   }
 
   @Get('play/:fileId')
-  play(@Param('fileId') fileId: string) {
-    return { will: 'return a playable stream of ' + fileId };
+  @Head('play/:fileId')
+  play(
+    @Param('fileId') fileId: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    this.allFilesService.play(fileId, request, response);
   }
 
   @Get(':titleId/:seasonId?')
