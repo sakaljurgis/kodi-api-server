@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { StreamerService } from './streamer.service';
+import { FileStreamerService } from './StreamerService/file-streamer.service';
 
 @Injectable()
 export class StreamerFacade {
-  constructor(private readonly streamerService: StreamerService) {}
+  constructor(private readonly fileStreamerService: FileStreamerService) {}
 
-  streamFile(request: Request, response: Response, filePath: string): void {
-    this.streamerService.streamFile(request, response, filePath);
+  async streamFile(
+    request: Request,
+    response: Response,
+    filePath: string,
+  ): Promise<void> {
+    return this.fileStreamerService.streamFile(request, response, filePath);
   }
 }

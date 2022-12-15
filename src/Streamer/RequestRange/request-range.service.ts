@@ -29,4 +29,12 @@ export class RequestRangeService {
 
     return new RequestRangeBytes(start, end);
   }
+
+  isRangeSatisfiable(requestRange: RequestRangeBytes, size: number): boolean {
+    return (
+      requestRange.start < size &&
+      requestRange.end < size &&
+      requestRange.end >= requestRange.start
+    );
+  }
 }

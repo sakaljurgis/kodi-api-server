@@ -29,8 +29,8 @@ export class AllFilesController {
     @Param('fileId') fileId: string,
     @Req() request: Request,
     @Res() response: Response,
-  ) {
-    this.allFilesService.play(fileId, request, response);
+  ): Promise<void> {
+    return this.allFilesService.play(fileId, request, response);
   }
 
   @Get(':titleId/:seasonId?')

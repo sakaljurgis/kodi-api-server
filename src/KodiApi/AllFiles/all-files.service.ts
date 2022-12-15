@@ -135,17 +135,16 @@ export class AllFilesService {
     response: Response,
   ): Promise<void> {
     const id = parseInt(fileId);
+    if (isNaN(id)) {
+      throw new NotFoundException(`id #${fileId} not correct`);
+    }
+
     const entity = await this.fileRepository.findOne({ where: { id: id } });
 
     if (entity === null) {
-      response
-        .status(404)
-        .send('entity not found id: ' + fileId)
-        .end();
-
-      return;
+      throw new NotFoundException(`id #${fileId} not found`);
     }
 
-    this.streamerFacade.streamFile(request, response, entity.path);
+    return this.streamerFacade.streamFile(request, response, entity.path);
   }
 }
