@@ -25,6 +25,7 @@ export class LrtApiSearchClient {
     const searchResponse: SearchResponseInterface = resp.data;
 
     const cats = [];
+    const loadedCategories = new Set();
 
     //todo - move to mapper
     const responseDto = new SearchResponseDto(
@@ -34,6 +35,9 @@ export class LrtApiSearchClient {
 
     for (const searchItem of searchResponse.items) {
       if (cats.indexOf(searchItem.category_title) > -1) {
+        continue;
+      }
+      if (loadedCategories.has(searchItem.category_title)) {
         continue;
       }
       const itemDto = new SearchResponseItemDto();
@@ -46,6 +50,7 @@ export class LrtApiSearchClient {
       itemDto.categoryId = await this.findCategoryId(searchItem.category_url);
 
       cats.push(searchItem.category_title);
+      loadedCategories.add(searchItem.category_title);
       responseDto.addItem(itemDto);
     }
 
@@ -83,7 +88,6 @@ export class LrtApiSearchClient {
   }
 
   private async findCategoryIdInLrt(categoryUrl: string): Promise<string> {
-    //todo - cache to database
     const url = 'https://www.lrt.lt' + categoryUrl;
     const resp = await firstValueFrom(this.httpService.get(url));
     const body: string = resp.data;

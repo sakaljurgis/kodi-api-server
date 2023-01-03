@@ -8,6 +8,15 @@ A rewrite attempt from "vanilla" node.js into framework based (Nest.js).
 
 No licence
 
+## Migrations
+```bash
+# create migration
+$ npm run typeorm:create-migration -name=CreateFilesTable
+
+# run migration
+$ npm run typeorm:run-migrations
+```
+
 ## Below are left from nest readme
 
 ## Installation

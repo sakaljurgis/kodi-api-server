@@ -7,27 +7,33 @@ export class PathsConfig {
   }
 
   public getStaticRequestsLogPath(): string {
-    return join(
-      this.getRootPath(),
-      this.configService.getEnv('LOG_FILE_REQUESTS'),
-    );
+    return this.getPathByEnvKey('LOG_FILE_REQUESTS');
   }
 
   public getStaticFolder(): string {
-    return join(
-      this.getRootPath(),
-      this.configService.getEnv('STATIC_SERVE_FOLDER'),
-    );
+    return this.getPathByEnvKey('STATIC_SERVE_FOLDER');
   }
 
   public getRecentSearchesFolder(): string {
-    return join(
-      this.getRootPath(),
-      this.configService.getEnv('RECENT_SEARCHES_FOLDER'),
-    );
+    return this.getPathByEnvKey('RECENT_SEARCHES_FOLDER');
+  }
+
+  private getPathByEnvKey(key: string) {
+    const relPath = this.configService.getEnv(key);
+
+    return this.getPath(relPath);
+  }
+
+  private getPath(relPath: string) {
+    if (relPath[0] === '/') {
+      //this is an absolute path
+      return relPath;
+    }
+
+    return join(this.getRootPath(), relPath);
   }
 
   private getRootPath(): string {
-    return join(__dirname, '../..');
+    return this.configService.getEnv('PWD');
   }
 }

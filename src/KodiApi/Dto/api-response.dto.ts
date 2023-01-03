@@ -4,10 +4,10 @@ export default class ApiResponse {
   items: Array<ResponseItem> = [];
   content = 'videos';
   updateList = true;
-  category: string;
-  play: string;
-  msgBoxOK: string;
-  nosort: boolean;
+  category: string | undefined;
+  play: string | undefined;
+  msgBoxOK: string | undefined;
+  nosort: boolean | undefined;
 
   setTitle(title) {
     this.category = title;

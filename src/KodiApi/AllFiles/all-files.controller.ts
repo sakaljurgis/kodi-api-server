@@ -1,8 +1,8 @@
 import { Controller, Get, Head, Param, Req, Res } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { AllFilesService } from './all-files.service';
-import { TitleTypeEnum } from './Enum/title-type.enum';
 import { Request, Response } from 'express';
+import { TitleTypeEnum } from '../../VideoFiles/Enum/title-type.enum';
 
 @Controller('api/all')
 export class AllFilesController {

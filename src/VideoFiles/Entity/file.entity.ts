@@ -15,9 +15,6 @@ export class FileEntity {
   @Column()
   size: number;
 
-  @Column({ name: 'relative_path' })
-  relativePath: string;
-
   @Column({ name: 'file_name' })
   fileName: string;
 

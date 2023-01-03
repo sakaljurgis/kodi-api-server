@@ -1,23 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { TitleEntity } from './Entity/title.entity';
-import { FileEntity } from './Entity/file.entity';
-import { TitleTypeEnum } from './Enum/title-type.enum';
 import { StreamerFacade } from '../../Streamer/streamer.facade';
 import { Request, Response } from 'express';
+import { VideoFilesProvider } from '../../VideoFiles/video-files.provider';
+import { TitleTypeEnum } from '../../VideoFiles/Enum/title-type.enum';
+import { FileEntity } from '../../VideoFiles/Entity/file.entity';
+import { TitleEntity } from '../../VideoFiles/Entity/title.entity';
 
 @Injectable()
 export class AllFilesService {
   constructor(
     private readonly koiApiResponseFactory: KodiApiResponseFactory,
-    @InjectRepository(TitleEntity)
-    private titleRepository: Repository<TitleEntity>,
-    @InjectRepository(FileEntity)
-    private fileRepository: Repository<FileEntity>,
     private readonly streamerFacade: StreamerFacade,
+    private readonly videoTitlesProvider: VideoFilesProvider,
   ) {}
 
   getMenu(): ApiResponse {
@@ -37,13 +33,7 @@ export class AllFilesService {
   }
 
   async getListOfTitles(type: TitleTypeEnum): Promise<ApiResponse> {
-    const entities = await this.titleRepository
-      .createQueryBuilder()
-      .setFindOptions({ relations: { files: true } })
-      .where('type = :type', { type: type })
-      .andWhere('deleted = :deleted', { deleted: false })
-      .getMany();
-
+    const entities = await this.videoTitlesProvider.getListOfTitles(type);
     const response = this.koiApiResponseFactory.createApiResponse();
     response.setTitle('All ' + type + 's');
     entities.forEach((entity) => {
@@ -51,7 +41,9 @@ export class AllFilesService {
         .createItem()
         .setLabel(entity.title)
         .setToFolder()
-        .setPlot(entity.files.length + ' files')
+        .setPlot(
+          entity.files.length + (entity.files.length > 1 ? ' files' : ' file'),
+        )
         .setPath('all/' + entity.id);
     });
 
@@ -59,15 +51,15 @@ export class AllFilesService {
   }
 
   async loadTitle(titleId: number, seasonId: number): Promise<ApiResponse> {
-    const titleEntity = await this.titleRepository.findOne({
-      relations: { files: true },
-      where: { id: titleId },
-    });
+    const titleEntity = titleId
+      ? await this.videoTitlesProvider.getTitleWithFiles(titleId)
+      : null;
 
     if (titleEntity === null) {
+      //todo - alert instead of full api response
       return this.koiApiResponseFactory
         .createApiResponse()
-        .setTitle('Not found ' + titleId);
+        .setTitle('Not found' + (titleId ? ' ' + titleId : ''));
     }
 
     if (titleEntity.type === TitleTypeEnum.movie) {
@@ -112,10 +104,13 @@ export class AllFilesService {
 
     //todo - add num files count
     const seasons = [];
+    const filesCount = {};
     for (const fileEntity of titleEntity.files) {
       if (seasons.indexOf(fileEntity.season) === -1) {
         seasons.push(fileEntity.season);
+        filesCount[fileEntity.season] = 0;
       }
+      filesCount[fileEntity.season]++;
     }
 
     for (const season of seasons) {
@@ -123,6 +118,9 @@ export class AllFilesService {
         .createItem()
         .setLabel(season + ' Sezonas')
         .setToFolder()
+        .setPlot(
+          filesCount[season] + (filesCount[season] > 1 ? ' files' : ' file'),
+        )
         .setPath(`all/${titleEntity.id}/${season}`);
     }
 
@@ -138,13 +136,12 @@ export class AllFilesService {
     if (isNaN(id)) {
       throw new NotFoundException(`id #${fileId} not correct`);
     }
+    const filePath = await this.videoTitlesProvider.getFilePath(id);
 
-    const entity = await this.fileRepository.findOne({ where: { id: id } });
-
-    if (entity === null) {
+    if (filePath === null) {
       throw new NotFoundException(`id #${fileId} not found`);
     }
 
-    return this.streamerFacade.streamFile(request, response, entity.path);
+    return this.streamerFacade.streamFile(request, response, filePath);
   }
 }

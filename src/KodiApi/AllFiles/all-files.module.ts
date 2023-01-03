@@ -2,16 +2,11 @@ import { Module } from '@nestjs/common';
 import { AllFilesController } from './all-files.controller';
 import { AllFilesService } from './all-files.service';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { TitleEntity } from './Entity/title.entity';
-import { FileEntity } from './Entity/file.entity';
 import { StreamerModule } from '../../Streamer/streamer.module';
+import { VideoFilesModule } from '../../VideoFiles/video-files.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([TitleEntity, FileEntity]),
-    StreamerModule,
-  ],
+  imports: [StreamerModule, VideoFilesModule],
   controllers: [AllFilesController],
   providers: [AllFilesService, KodiApiResponseFactory],
 })
