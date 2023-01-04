@@ -3,9 +3,13 @@ import { StreamerFacade } from './streamer.facade';
 import { MimeService } from './Mime/mime.service';
 import { RequestRangeService } from './RequestRange/request-range.service';
 import { StreamerService } from './StreamerService/streamer.service';
-import { FileStreamerService } from './StreamerService/file-streamer.service';
 import { ResponseHeadersService } from './ResponseHeadersService/response-headers.service';
 import { ResponseSenderService } from './ResponseSender/response-sender.service';
+import {
+  ReadStreamCreatableProvider,
+  ReadStreamCreatableProviders,
+} from './ReadStreamProvider/read-stream-creatable.provider';
+import { FsReadStreamCreatableProvider } from './ReadStreamProvider/FileSystem/fs-read-stream-creatable.provider';
 
 @Module({
   imports: [],
@@ -14,9 +18,15 @@ import { ResponseSenderService } from './ResponseSender/response-sender.service'
     RequestRangeService,
     ResponseHeadersService,
     ResponseSenderService,
-    FileStreamerService,
     StreamerService,
     StreamerFacade,
+    ReadStreamCreatableProvider,
+    FsReadStreamCreatableProvider,
+    {
+      provide: ReadStreamCreatableProviders,
+      useFactory: (...providers) => providers,
+      inject: [FsReadStreamCreatableProvider],
+    },
   ],
   exports: [StreamerFacade],
 })

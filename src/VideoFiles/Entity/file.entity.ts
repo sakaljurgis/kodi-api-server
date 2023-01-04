@@ -1,5 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { TitleEntity } from './title.entity';
+import { StreamProviderEnum } from '../../Streamer/ReadStreamProvider/stream-provider.enum';
 
 @Entity('files')
 export class FileEntity {
@@ -36,4 +37,7 @@ export class FileEntity {
 
   @Column()
   duration: number;
+
+  @Column({ name: 'stream_provider' })
+  streamProvider: StreamProviderEnum;
 }

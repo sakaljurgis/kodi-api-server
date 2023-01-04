@@ -1,6 +1,5 @@
 import { ReadStreamCreatable } from '../Interface/read-stream-creatable.interface';
 import { RequestRangeService } from '../RequestRange/request-range.service';
-import { MimeService } from '../Mime/mime.service';
 import { Injectable } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ResponseHeadersService } from '../ResponseHeadersService/response-headers.service';
@@ -10,7 +9,6 @@ import RequestRangeBytes from '../RequestRange/request-range-bytes.class';
 @Injectable()
 export class StreamerService {
   constructor(
-    private readonly mimeService: MimeService,
     private readonly requestRangeService: RequestRangeService,
     private readonly responseHeadersService: ResponseHeadersService,
     private readonly responseSender: ResponseSenderService,

@@ -136,12 +136,12 @@ export class AllFilesService {
     if (isNaN(id)) {
       throw new NotFoundException(`id #${fileId} not correct`);
     }
-    const filePath = await this.videoTitlesProvider.getFilePath(id);
+    const fileEntity = await this.videoTitlesProvider.getFile(id);
 
-    if (filePath === null) {
+    if (fileEntity === null) {
       throw new NotFoundException(`id #${fileId} not found`);
     }
 
-    return this.streamerFacade.streamFile(request, response, filePath);
+    return this.streamerFacade.streamVideoFile(request, response, fileEntity);
   }
 }

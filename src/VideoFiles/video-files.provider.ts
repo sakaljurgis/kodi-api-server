@@ -32,15 +32,9 @@ export class VideoFilesProvider {
       .catch(() => null);
   }
 
-  async getFilePath(fileId: number): Promise<string | null> {
-    const entity = await this.fileRepository
+  async getFile(fileId: number): Promise<FileEntity | null> {
+    return this.fileRepository
       .findOne({ where: { id: fileId } })
       .catch(() => null);
-
-    if (entity === null) {
-      return null;
-    }
-
-    return entity.path;
   }
 }
