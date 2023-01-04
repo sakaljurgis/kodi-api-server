@@ -15,6 +15,7 @@ export class StreamerService {
     private readonly responseHeadersService: ResponseHeadersService,
     private readonly responseSender: ResponseSenderService,
   ) {}
+
   stream(
     req: Request,
     res: Response,

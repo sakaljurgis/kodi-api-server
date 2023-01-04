@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "nest build",
+    "build": "nest build && npm run copy-files",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -23,7 +23,8 @@
     "typeorm:run-migrations": "npm run typeorm migration:run -- -d ./src/config/type-orm-migrations.config.ts",
     "typeorm:generate-migration": "npm run typeorm -- -d ./src/config/type-orm-migrations.config.ts migration:generate ./migrations/$npm_config_name",
     "typeorm:create-migration": "npm run typeorm -- migration:create ./migrations/$npm_config_name",
-    "typeorm:revert-migration": "npm run typeorm -- -d ./src/config/type-orm-migrations.config.ts migration:revert"
+    "typeorm:revert-migration": "npm run typeorm -- -d ./src/config/type-orm-migrations.config.ts migration:revert",
+    "copy-files": "copyfiles -u 1 src/**/*.html dist/src/"
   },
   "dependencies": {
     "@nestjs/axios": "^1.0.0",
@@ -50,6 +51,7 @@
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",

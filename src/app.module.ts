@@ -10,11 +10,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RequestLogMiddleware } from './RequestLog/request-log.middleware';
 import { TryModule } from './TryOutModule/try.module';
 import { configService } from './config/config.service';
+import { KodiApiInterfaceModule } from './KodiApiInterface/kodi-api-interface.module';
 
 @Module({
   imports: [
     TryModule,
     KodiApiModule,
+    KodiApiInterfaceModule,
     StaticModule,
     TypeOrmModule.forRoot(configService.getTypeOrmConfig()),
   ],

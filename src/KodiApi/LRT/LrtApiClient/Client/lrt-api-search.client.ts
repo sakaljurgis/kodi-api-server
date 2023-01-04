@@ -24,7 +24,6 @@ export class LrtApiSearchClient {
     const resp = await firstValueFrom(this.httpService.get(url));
     const searchResponse: SearchResponseInterface = resp.data;
 
-    const cats = [];
     const loadedCategories = new Set();
 
     //todo - move to mapper
@@ -34,9 +33,6 @@ export class LrtApiSearchClient {
     );
 
     for (const searchItem of searchResponse.items) {
-      if (cats.indexOf(searchItem.category_title) > -1) {
-        continue;
-      }
       if (loadedCategories.has(searchItem.category_title)) {
         continue;
       }
@@ -49,7 +45,6 @@ export class LrtApiSearchClient {
         searchItem.img_path_postfix;
       itemDto.categoryId = await this.findCategoryId(searchItem.category_url);
 
-      cats.push(searchItem.category_title);
       loadedCategories.add(searchItem.category_title);
       responseDto.addItem(itemDto);
     }
@@ -69,7 +64,7 @@ export class LrtApiSearchClient {
     const cat = new LrtCategory();
     cat.categoryUrl = categoryUrl;
     cat.categoryId = catId;
-    this.lrtCategoriesRepository.save(cat);
+    this.lrtCategoriesRepository.save(cat).then();
   }
 
   private async findCategoryIdInDb(
