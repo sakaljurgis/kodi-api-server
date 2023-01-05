@@ -27,7 +27,7 @@ export class VideoFilesProvider {
     return this.titleRepository
       .findOne({
         relations: { files: true },
-        where: { id: titleId },
+        where: { id: titleId, files: { deleted: false } },
       })
       .catch(() => null);
   }

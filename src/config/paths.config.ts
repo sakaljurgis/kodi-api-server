@@ -18,7 +18,7 @@ export class PathsConfig {
     return this.getPathByEnvKey('RECENT_SEARCHES_FOLDER');
   }
 
-  private getPathByEnvKey(key: string) {
+  public getPathByEnvKey(key: string) {
     const relPath = this.configService.getEnv(key);
 
     return this.getPath(relPath);
