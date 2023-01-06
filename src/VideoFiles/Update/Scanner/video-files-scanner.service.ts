@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { configService } from '../../config/config.service';
-import { VideoFilesConfig } from '../../config/video-files.config';
+import { configService } from '../../../config/config.service';
+import { VideoFilesConfig } from '../../../config/video-files.config';
 import { spawn } from 'child_process';
 
 @Injectable()

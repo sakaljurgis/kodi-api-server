@@ -1,20 +1,38 @@
-import { VideoFilePathDto } from '../Dto/video-file-path.dto';
 import { Injectable } from '@nestjs/common';
 import * as tnp from 'torrent-name-parser';
+import { FileEntityExpanderInterface } from './file-entity-expander.interface';
+import { FileEntity } from 'src/VideoFiles/Entity/file.entity';
+import { VideoFilesUpdateRepository } from '../video-files-update.repository';
+import { TitleTypeEnum } from '../../Enum/title-type.enum';
 
 //todo - refactor this copy-paste, add types, ect.
-//todo - make an interface and add as info/data provider (fileEntity data expander interface)
 @Injectable()
-export class VideoFileTitleService {
-  constructor() {
+export class FileEntityTitleInfoExpander
+  implements FileEntityExpanderInterface
+{
+  constructor(private readonly repository: VideoFilesUpdateRepository) {
     tnp.configure({ sample: /sample/i }, { sample: 'boolean' });
     tnp.configure({ year: /([\[\(]?((?:19[0-9][0-9]|20[0-2][0-9]))[\]\)]?)/ });
     tnp.configure({ container: /MKV|AVI|MP4|mkv|avi|mp4/i });
   }
 
-  extractTitleInfo(filePath: VideoFilePathDto) {
+  async expand(fileEntity: FileEntity): Promise<FileEntity> {
+    const titleInfo = this.extractTitleInfo(fileEntity.relativePath);
+
+    fileEntity.info = JSON.stringify(titleInfo.info);
+    fileEntity.infos = JSON.stringify(titleInfo.infos);
+    fileEntity.season = titleInfo.info.season;
+    fileEntity.title = await this.repository.findOrCreateTitle(
+      titleInfo.info.title,
+      titleInfo.info.season ? TitleTypeEnum.show : TitleTypeEnum.movie,
+    );
+
+    return fileEntity;
+  }
+
+  extractTitleInfo(relativePath: string) {
     const infos = [];
-    const arrPath = filePath.relativePath.split('/');
+    const arrPath = relativePath.split('/');
 
     for (let i = 0; i < arrPath.length; i++) {
       const info = tnp(arrPath[i]);

@@ -1,11 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
-import { VideoFilesUpdateService } from '../VideoFiles/FileDbUpdater/video-files-update.service';
+import { VideoFilesFacade } from '../VideoFiles/video-files.facade';
 
 @Controller('try')
 export class TryController {
-  constructor(readonly videoFilesUpdateService: VideoFilesUpdateService) {}
+  constructor(readonly videoFilesFacade: VideoFilesFacade) {}
+
   @Get('')
   main() {
-    return this.videoFilesUpdateService.updateFsVideoFiles();
+    this.videoFilesFacade.updateFsVideoFiles();
+    return { doing: 'something' };
   }
 }

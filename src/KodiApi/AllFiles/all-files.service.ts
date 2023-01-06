@@ -3,7 +3,7 @@ import ApiResponse from '../Dto/api-response.dto';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { StreamerFacade } from '../../Streamer/streamer.facade';
 import { Request, Response } from 'express';
-import { VideoFilesProvider } from '../../VideoFiles/video-files.provider';
+import { VideoFilesFacade } from '../../VideoFiles/video-files.facade';
 import { TitleTypeEnum } from '../../VideoFiles/Enum/title-type.enum';
 import { FileEntity } from '../../VideoFiles/Entity/file.entity';
 import { TitleEntity } from '../../VideoFiles/Entity/title.entity';
@@ -13,7 +13,7 @@ export class AllFilesService {
   constructor(
     private readonly koiApiResponseFactory: KodiApiResponseFactory,
     private readonly streamerFacade: StreamerFacade,
-    private readonly videoTitlesProvider: VideoFilesProvider,
+    private readonly videoFilesFacade: VideoFilesFacade,
   ) {}
 
   getMenu(): ApiResponse {
@@ -33,7 +33,7 @@ export class AllFilesService {
   }
 
   async getListOfTitles(type: TitleTypeEnum): Promise<ApiResponse> {
-    const entities = await this.videoTitlesProvider.getListOfTitles(type);
+    const entities = await this.videoFilesFacade.getListOfTitles(type);
     const response = this.koiApiResponseFactory.createApiResponse();
     response.setTitle('All ' + type + 's');
     entities.forEach((entity) => {
@@ -52,7 +52,7 @@ export class AllFilesService {
 
   async loadTitle(titleId: number, seasonId: number): Promise<ApiResponse> {
     const titleEntity = titleId
-      ? await this.videoTitlesProvider.getTitleWithFiles(titleId)
+      ? await this.videoFilesFacade.getTitleWithFiles(titleId)
       : null;
 
     if (titleEntity === null) {
@@ -136,7 +136,7 @@ export class AllFilesService {
     if (isNaN(id)) {
       throw new NotFoundException(`id #${fileId} not correct`);
     }
-    const fileEntity = await this.videoTitlesProvider.getFile(id);
+    const fileEntity = await this.videoFilesFacade.getFile(id);
 
     if (fileEntity === null) {
       throw new NotFoundException(`id #${fileId} not found`);

@@ -40,4 +40,17 @@ export class FileEntity {
 
   @Column({ name: 'stream_provider' })
   streamProvider: StreamProviderEnum;
+
+  @Column({ name: 'relative_path' })
+  relativePath: string;
+
+  //todo - consider if these 3 below should be better organized
+  @Column()
+  transmission: boolean;
+
+  @Column()
+  linkomanija: boolean;
+
+  @Column()
+  webtorrent: boolean;
 }

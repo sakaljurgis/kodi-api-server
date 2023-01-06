@@ -4,14 +4,17 @@ import { Repository } from 'typeorm';
 import { TitleEntity } from './Entity/title.entity';
 import { TitleTypeEnum } from './Enum/title-type.enum';
 import { FileEntity } from './Entity/file.entity';
+import { VideoFilesUpdateService } from './Update/video-files-update.service';
 
+//todo - refactor provider as facade
 @Injectable()
-export class VideoFilesProvider {
+export class VideoFilesFacade {
   constructor(
     @InjectRepository(TitleEntity)
     private readonly titleRepository: Repository<TitleEntity>,
     @InjectRepository(FileEntity)
     private readonly fileRepository: Repository<FileEntity>,
+    private readonly videoFilesUpdateService: VideoFilesUpdateService,
   ) {}
 
   async getListOfTitles(type: TitleTypeEnum): Promise<TitleEntity[]> {
@@ -36,5 +39,9 @@ export class VideoFilesProvider {
     return this.fileRepository
       .findOne({ where: { id: fileId } })
       .catch(() => null);
+  }
+
+  updateFsVideoFiles(): void {
+    this.videoFilesUpdateService.updateFsVideoFiles().then();
   }
 }
