@@ -1,4 +1,4 @@
-import { FileEntity } from '../../Entity/file.entity';
+import { FileEntity } from '../../../Shared/Entity/file.entity';
 
 export interface FileEntityExpanderInterface {
   expand(fileEntity: FileEntity): Promise<FileEntity>;

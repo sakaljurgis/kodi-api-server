@@ -10,9 +10,12 @@ import {
   ReadStreamCreatableProviders,
 } from './ReadStreamProvider/read-stream-creatable.provider';
 import { FsReadStreamCreatableProvider } from './ReadStreamProvider/FileSystem/fs-read-stream-creatable.provider';
+import { WtReadStreamCreatableProvider } from './ReadStreamProvider/Webtorrent/wt-read-stream-creatable.provider';
+import { TorrentDownloadClientModule } from '../Torrent/DownloadClient/torrent-download-client.module';
+import { VideoFilesModule } from '../VideoFiles/video-files.module';
 
 @Module({
-  imports: [],
+  imports: [TorrentDownloadClientModule, VideoFilesModule],
   providers: [
     MimeService,
     RequestRangeService,
@@ -22,10 +25,11 @@ import { FsReadStreamCreatableProvider } from './ReadStreamProvider/FileSystem/f
     StreamerFacade,
     ReadStreamCreatableProvider,
     FsReadStreamCreatableProvider,
+    WtReadStreamCreatableProvider,
     {
       provide: ReadStreamCreatableProviders,
       useFactory: (...providers) => providers,
-      inject: [FsReadStreamCreatableProvider],
+      inject: [FsReadStreamCreatableProvider, WtReadStreamCreatableProvider],
     },
   ],
   exports: [StreamerFacade],

@@ -7,4 +7,13 @@ export class LrtCategory {
 
   @Column({ name: 'category_id' })
   categoryId: string;
+
+  @Column()
+  title: string;
+
+  @Column({ name: 'last_access' })
+  lastAccess: number;
+
+  @Column()
+  thumb: string;
 }

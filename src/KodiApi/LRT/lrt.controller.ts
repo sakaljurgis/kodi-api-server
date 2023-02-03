@@ -12,7 +12,7 @@ export class LrtController {
   ) {}
 
   @Get()
-  getLrtMenu(): ApiResponse {
+  getLrtMenu(): Promise<ApiResponse> {
     return this.lrtService.getMainMenu();
   }
 

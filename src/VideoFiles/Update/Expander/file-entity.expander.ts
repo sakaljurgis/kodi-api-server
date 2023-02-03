@@ -1,6 +1,6 @@
 import { FileEntityExpanderInterface } from './file-entity-expander.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { FileEntity } from '../../Entity/file.entity';
+import { FileEntity } from '../../../Shared/Entity/file.entity';
 
 export const FileEntityExpanders = 'FileEntityExpanders';
 
@@ -8,7 +8,7 @@ export const FileEntityExpanders = 'FileEntityExpanders';
 export class FileEntityExpander implements FileEntityExpanderInterface {
   constructor(
     @Inject(FileEntityExpanders)
-    private expanders: Array<FileEntityExpanderInterface>,
+    private expanders: FileEntityExpanderInterface[],
   ) {}
 
   async expand(fileEntity: FileEntity): Promise<FileEntity> {
@@ -18,11 +18,8 @@ export class FileEntityExpander implements FileEntityExpanderInterface {
       const expanderPromise = expander.expand(fileEntity);
       expanderPromises.push(expanderPromise);
     }
+    await Promise.all(expanderPromises);
 
-    return new Promise((resolve) => {
-      Promise.all(expanderPromises).then(() => {
-        resolve(fileEntity);
-      });
-    });
+    return fileEntity;
   }
 }

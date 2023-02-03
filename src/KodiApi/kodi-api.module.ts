@@ -10,9 +10,10 @@ import { LrtModule } from './LRT/lrt.module';
 import { KodiApiService } from './kodi-api.service';
 import { KodiApiResponseFactory } from './kodi-api-response.factory';
 import { AllFilesModule } from './AllFiles/all-files.module';
+import { TorrentModule } from './Torrent/torrent.module';
 
 @Module({
-  imports: [LrtModule, AllFilesModule],
+  imports: [LrtModule, AllFilesModule, TorrentModule],
   controllers: [KodiApiController],
   providers: [KodiApiService, KodiApiResponseFactory],
 })

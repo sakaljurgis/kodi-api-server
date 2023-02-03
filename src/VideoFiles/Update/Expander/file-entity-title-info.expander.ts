@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import * as tnp from 'torrent-name-parser';
 import { FileEntityExpanderInterface } from './file-entity-expander.interface';
-import { FileEntity } from 'src/VideoFiles/Entity/file.entity';
+import { FileEntity } from 'src/Shared/Entity/file.entity';
 import { VideoFilesUpdateRepository } from '../video-files-update.repository';
-import { TitleTypeEnum } from '../../Enum/title-type.enum';
+import { TitleTypeEnum } from '../../../Shared/Enum/title-type.enum';
 
 //todo - refactor this copy-paste, add types, ect.
 @Injectable()

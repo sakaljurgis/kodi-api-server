@@ -1,5 +1,5 @@
 import { ReadStreamCreatable } from '../Interface/read-stream-creatable.interface';
-import { FileEntity } from '../../VideoFiles/Entity/file.entity';
+import { FileEntity } from '../../Shared/Entity/file.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { ReadStreamCreatableProviderInterface } from './read-stream-creatable-provider.interface';
 
@@ -17,5 +17,6 @@ export class ReadStreamCreatableProvider {
         return provider.getReadStreamCreatable(fileEntity);
       }
     }
+    return Promise.reject('no stream provider');
   }
 }

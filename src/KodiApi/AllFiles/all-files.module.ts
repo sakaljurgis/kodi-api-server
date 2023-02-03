@@ -9,5 +9,6 @@ import { VideoFilesModule } from '../../VideoFiles/video-files.module';
   imports: [StreamerModule, VideoFilesModule],
   controllers: [AllFilesController],
   providers: [AllFilesService, KodiApiResponseFactory],
+  exports: [AllFilesService],
 })
 export class AllFilesModule {}

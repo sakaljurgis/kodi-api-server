@@ -12,34 +12,34 @@ export class LrtService {
     private readonly recentSearchesService: RecentSearchesService,
   ) {}
 
-  getMainMenu(): ApiResponse {
+  getMainMenu(): Promise<ApiResponse> {
     const apiResponse = this.kodiApiResponseFactory.createApiResponse();
     apiResponse.setNoSort().setTitle('LRT.lt');
-    this.createMainMenu(apiResponse);
 
-    return apiResponse;
+    return this.createMainMenu(apiResponse);
   }
 
-  private createMainMenu(apiResponse: ApiResponse): void {
-    //todo - refactor to 5 most recent searches + viskas?
-    const items = {
-      'lrt/recent': 'neseniai ieskoti',
-      'lrt/tema/vaikams': 'vaikams',
-      'lrt/tema/sportas': 'sportas',
-      'lrt/tema/kultura': 'kultura',
-      'lrt/tema/muzika': 'muzika',
-      'lrt/tema/viskas': 'viskas',
-      'lrt/tema/tv-laidos': 'tv-laidos',
-    };
-    apiResponse
-      .createItem()
-      .setPath('lrt/search')
-      .setActionSearch()
-      .setLabel('paieška');
+  private async createMainMenu(apiResponse: ApiResponse): Promise<ApiResponse> {
+    apiResponse.addNavigationItems(
+      [
+        ['paieška', 'search', ''],
+        ['neseniai ieskoti', 'recent'],
+        ['viskas', 'tema/viskas'],
+      ],
+      'lrt/',
+    );
 
-    for (const [path, label] of Object.entries(items)) {
-      apiResponse.createItem().setLabel(label).setToFolder().setPath(path);
+    const recentCategories = await this.lrtApiClient.getRecentCategories(7);
+    for (const category of recentCategories) {
+      apiResponse
+        .createItem()
+        .setPath('/lrt/cat/' + category.categoryId)
+        .setThumb(category.thumb)
+        .setLabel(category.title)
+        .setToFolder();
     }
+
+    return apiResponse;
   }
 
   async searchCategories(query: string): Promise<ApiResponse> {

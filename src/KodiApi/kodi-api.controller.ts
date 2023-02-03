@@ -8,4 +8,9 @@ export class KodiApiController {
   getMainMenu() {
     return this.kodiApiService.getMainMenu();
   }
+
+  @Get('test')
+  getCurrentTest() {
+    return this.kodiApiService.getCurrentTest();
+  }
 }

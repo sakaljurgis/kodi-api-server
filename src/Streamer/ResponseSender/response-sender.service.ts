@@ -17,5 +17,8 @@ export class ResponseSenderService {
     }
 
     readable.pipe(response);
+    readable.on('error', (e) => {
+      //todo - figure out the Error: Writable stream closed prematurely
+    });
   }
 }

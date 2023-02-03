@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { FileEntity } from '../VideoFiles/Entity/file.entity';
+import { FileEntity } from '../Shared/Entity/file.entity';
 import { ReadStreamCreatableProvider } from './ReadStreamProvider/read-stream-creatable.provider';
 import { StreamerService } from './StreamerService/streamer.service';
 

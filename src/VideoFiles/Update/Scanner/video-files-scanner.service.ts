@@ -36,7 +36,7 @@ export class VideoFilesScannerService {
       }
 
       const findOptions = [path, '-name'].concat(
-        this.config.getVideoFilesExt().join(' -o -name ').split(' '),
+        ('*' + this.config.getVideoFilesExt().join(' -o -name *')).split(' '),
       );
 
       const objCommand = spawn('find', findOptions);

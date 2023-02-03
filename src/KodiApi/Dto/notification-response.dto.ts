@@ -1,6 +1,7 @@
 export default class NotificationResponse {
-  notification: string;
-  refreshContainer: boolean;
+  readonly notification: string;
+  readonly refreshContainer: boolean;
+  readonly updateList = false;
 
   constructor(message: string, refreshContainer = true) {
     this.notification = message;

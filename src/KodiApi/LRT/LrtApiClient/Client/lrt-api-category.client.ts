@@ -4,10 +4,17 @@ import { firstValueFrom } from 'rxjs';
 import { SearchResponseInterface } from '../Interface/search-response.interface';
 import { SearchResponseDto } from '../Dto/search-response.dto';
 import { SearchResponseItemDto } from '../Dto/search-response-item.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { LrtCategory } from '../Entity/lrt-category.entity';
+import { IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class LrtApiCategoryClient {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    @InjectRepository(LrtCategory)
+    private lrtCategoriesRepository: Repository<LrtCategory>,
+  ) {}
 
   async getCategory(catId: string): Promise<SearchResponseDto> {
     const url = 'https://www.lrt.lt/api/search?type=3&category_id=' + catId;
@@ -36,6 +43,23 @@ export class LrtApiCategoryClient {
       responseDto.addItem(itemDto);
     }
 
+    //update last access
+    this.lrtCategoriesRepository
+      .update({ categoryId: catId }, { lastAccess: Date.now() })
+      .then((r) => {
+        if (r.affected === 0) {
+          //todo - search-update category info
+        }
+      });
+
     return responseDto;
+  }
+
+  getRecentCategories(count: number): Promise<LrtCategory[]> {
+    return this.lrtCategoriesRepository.find({
+      order: { lastAccess: 'DESC' },
+      take: count,
+      where: { lastAccess: Not(IsNull()) },
+    });
   }
 }

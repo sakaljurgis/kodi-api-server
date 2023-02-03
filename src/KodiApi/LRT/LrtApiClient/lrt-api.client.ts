@@ -3,6 +3,7 @@ import { LrtApiSearchClient } from './Client/lrt-api-search.client';
 import { SearchResponseDto } from './Dto/search-response.dto';
 import { LrtApiCategoryClient } from './Client/lrt-api-category.client';
 import { LrtApiPlaylistClient } from './Client/lrt-api-playlist.client';
+import { LrtCategory } from './Entity/lrt-category.entity';
 
 @Injectable()
 export class LrtApiClient {
@@ -22,5 +23,9 @@ export class LrtApiClient {
 
   getPlaylist(mediaUrl: string): Promise<string> {
     return this.playlistClient.getPlaylistUrl(mediaUrl);
+  }
+
+  getRecentCategories(count: number): Promise<LrtCategory[]> {
+    return this.categoryClient.getRecentCategories(count);
   }
 }

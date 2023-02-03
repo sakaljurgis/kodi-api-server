@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { TitleEntity } from './title.entity';
-import { StreamProviderEnum } from '../../Streamer/ReadStreamProvider/stream-provider.enum';
+import { StreamProviderEnum } from '../Enum/stream-provider.enum';
+import { TorrentEntity } from './torrent.entity';
 
 @Entity('files')
 export class FileEntity {
@@ -44,13 +45,19 @@ export class FileEntity {
   @Column({ name: 'relative_path' })
   relativePath: string;
 
-  //todo - consider if these 3 below should be better organized
-  @Column()
-  transmission: boolean;
+  @Column({ name: 'transmission_id' })
+  transmissionId: number;
 
   @Column()
   linkomanija: boolean;
 
-  @Column()
-  webtorrent: boolean;
+  @Column({ name: 'torrent_id' })
+  torrentId: number;
+
+  @ManyToOne(() => TorrentEntity, (torrent) => torrent.files)
+  @JoinColumn({ name: 'torrent_id' })
+  torrent: TorrentEntity;
+
+  @Column({ type: 'float' })
+  progress: number;
 }

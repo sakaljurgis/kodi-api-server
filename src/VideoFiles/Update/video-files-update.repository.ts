@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FileEntity } from '../Entity/file.entity';
+import { FileEntity } from '../../Shared/Entity/file.entity';
 import { In, Not, Repository, UpdateResult } from 'typeorm';
-import { StreamProviderEnum } from '../../Streamer/ReadStreamProvider/stream-provider.enum';
-import { TitleEntity } from '../Entity/title.entity';
-import { TitleTypeEnum } from '../Enum/title-type.enum';
+import { StreamProviderEnum } from '../../Shared/Enum/stream-provider.enum';
+import { TitleEntity } from '../../Shared/Entity/title.entity';
+import { TitleTypeEnum } from '../../Shared/Enum/title-type.enum';
 
 @Injectable()
 export class VideoFilesUpdateRepository {
@@ -78,6 +78,7 @@ export class VideoFilesUpdateRepository {
   ): Promise<FileEntity> {
     let fileEntity = await this.fileRepository.findOne({
       where: { path: path },
+      relations: { torrent: true },
     });
 
     if (fileEntity === null) {
@@ -87,6 +88,7 @@ export class VideoFilesUpdateRepository {
         await this.fileRepository.save(fileEntity);
         fileEntity = await this.fileRepository.findOne({
           where: { path: path },
+          relations: { torrent: true },
         });
       }
     }
@@ -96,5 +98,12 @@ export class VideoFilesUpdateRepository {
 
   public saveFiles(fileEntities: FileEntity[]) {
     return this.fileRepository.save(fileEntities);
+  }
+
+  public findFilesByPaths(paths: string[]): Promise<FileEntity[]> {
+    return this.fileRepository.find({
+      where: { path: In(paths) },
+      relations: { torrent: true },
+    });
   }
 }

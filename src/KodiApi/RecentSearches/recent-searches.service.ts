@@ -4,16 +4,21 @@ import { configService, ConfigService } from '../../config/config.service';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { join } from 'path';
 import { readFile, writeFile } from 'fs/promises';
+import { RecentSearchesConfig } from '../../config/recent-searches.config';
 
 @Injectable()
 export class RecentSearchesService {
-  private readonly configService: ConfigService;
+  private readonly config: RecentSearchesConfig;
+
   constructor(private readonly kodiApiResponseFactory: KodiApiResponseFactory) {
-    this.configService = configService;
+    this.config = configService.getRecentSearchesConfig();
   }
+
   async getRecentSearches(module: string, path: string): Promise<ApiResponse> {
     const data = await this.getRecentSearchesData(module);
-    const response = this.kodiApiResponseFactory.createApiResponse();
+    const response = this.kodiApiResponseFactory
+      .createApiResponse()
+      .setNoSort();
     for (const recentSearch of data) {
       response
         .createItem()
@@ -28,14 +33,19 @@ export class RecentSearchesService {
   async addRecentSearch(module: string, term: string): Promise<void> {
     const data = await this.getRecentSearchesData(module);
     const index = data.indexOf(term);
-    if (index > -1) {
+    if (index === 0) {
+      return Promise.resolve();
+    }
+    if (index > 0) {
       data.splice(index, 1);
     }
-    data.push(term);
-    const rawData = JSON.stringify(data);
-    const filePath = this.getFilePath(module);
+    data.unshift(term);
 
-    await writeFile(filePath, rawData);
+    const rawData = JSON.stringify(
+      data.slice(0, this.config.getRecentSearchesLimit()),
+    );
+    const filePath = this.getFilePath(module);
+    writeFile(filePath, rawData).then();
   }
 
   private async getRecentSearchesData(module: string): Promise<Array<string>> {
@@ -46,9 +56,6 @@ export class RecentSearchesService {
   }
 
   private getFilePath(module: string): string {
-    return join(
-      this.configService.getPaths().getRecentSearchesFolder(),
-      module + '.json',
-    );
+    return join(this.config.getRecentSearchesFolder(), module + '.json');
   }
 }

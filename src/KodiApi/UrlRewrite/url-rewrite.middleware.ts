@@ -5,12 +5,12 @@ import { join } from 'path';
 
 export class KodiApiUrlRewriteMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
-    let path = '';
     if (req.query && req.query.path) {
+      let path = '';
       path = req.query.path as string;
+      const query = req.url.split('?').pop();
+      req.url = join('/api/', path) + (query ? '?' + query : '');
     }
-    const query = req.url.split('?').pop();
-    req.url = join('/api/', path) + (query ? '?' + query : '');
 
     next();
   }

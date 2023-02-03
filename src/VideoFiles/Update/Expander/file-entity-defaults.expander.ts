@@ -1,5 +1,5 @@
 import { FileEntityExpanderInterface } from './file-entity-expander.interface';
-import { FileEntity } from '../../Entity/file.entity';
+import { FileEntity } from '../../../Shared/Entity/file.entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

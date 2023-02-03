@@ -9,23 +9,27 @@ export class KodiApiService {
   ) {}
 
   getMainMenu(): ApiResponse {
-    const apiResponse = this.kodiApiResponseFactory.createApiResponse();
-
-    apiResponse.setTitle('Menu');
-    this.createMainMenu(apiResponse);
-
-    return apiResponse;
+    return this.kodiApiResponseFactory
+      .createApiResponse()
+      .setTitle('Menu')
+      .addNavigationItems([
+        ['All Files', 'all'],
+        ['Torr', 'torr'],
+        ['LRT.lt', 'lrt'],
+        //['Test', 'test'],
+      ]);
   }
 
-  private createMainMenu(apiResponse: ApiResponse): void {
-    const items = {
-      all: 'All files',
-      torr: 'Torr',
-      lrt: 'LRT.lt',
-    };
-
-    for (const [path, label] of Object.entries(items)) {
-      apiResponse.createItem().setLabel(label).setToFolder().setPath(path);
-    }
+  getCurrentTest() {
+    return this.kodiApiResponseFactory
+      .createApiResponse()
+      .setTitle('Menu')
+      .addNavigationItems([
+        ['select 1', 'all'],
+        ['select 2', 'lrt'],
+        ['select 3', 'torr'],
+        ['select 4 search', 'test', ''],
+      ])
+      .setShowAsSelectList();
   }
 }

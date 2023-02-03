@@ -3,11 +3,11 @@ import { LrtController } from './lrt.controller';
 import { LrtService } from './lrt.service';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { LrtApiClientModule } from './LrtApiClient/lrt-api-client.module';
-import { RecentSearchesService } from '../RecentSearches/recent-searches.service';
+import { RecentSearchesModule } from '../RecentSearches/recent-searches.module';
 
 @Module({
-  imports: [LrtApiClientModule],
+  imports: [LrtApiClientModule, RecentSearchesModule],
   controllers: [LrtController],
-  providers: [KodiApiResponseFactory, LrtService, RecentSearchesService],
+  providers: [KodiApiResponseFactory, LrtService],
 })
 export class LrtModule {}

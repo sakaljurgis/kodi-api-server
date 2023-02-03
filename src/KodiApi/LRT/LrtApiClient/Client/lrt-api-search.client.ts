@@ -18,7 +18,8 @@ export class LrtApiSearchClient {
 
   async searchCategories(query: string): Promise<SearchResponseDto> {
     query = query === 'viskas' ? '' : query;
-    const url = 'https://www.lrt.lt/api/search?type=3&tema=' + query;
+    //const url = 'https://www.lrt.lt/api/search?type=3&tema=' + query;
+    const url = 'https://www.lrt.lt/api/search?type=3&order=desc&tema=' + query;
     //https://www.lrt.lt/api/search?page=1&count=44&order=desc
     //https://www.lrt.lt/api/search?get_terms=1
     const resp = await firstValueFrom(this.httpService.get(url));
@@ -43,6 +44,18 @@ export class LrtApiSearchClient {
         searchItem.img_path_prefix +
         '282x158' +
         searchItem.img_path_postfix;
+      let categoryId = await this.findCategoryIdInDb(searchItem.category_url);
+
+      if (categoryId === null) {
+        categoryId = await this.findCategoryIdInLrt(searchItem.category_url);
+        this.saveCategory(
+          searchItem.category_url,
+          categoryId,
+          searchItem.category_title,
+          itemDto.thumb,
+        );
+      }
+
       itemDto.categoryId = await this.findCategoryId(searchItem.category_url);
 
       loadedCategories.add(searchItem.category_title);
@@ -60,10 +73,17 @@ export class LrtApiSearchClient {
     return this.findCategoryIdInLrt(categoryUrl);
   }
 
-  private saveCategory(categoryUrl: string, catId: string) {
+  private saveCategory(
+    categoryUrl: string,
+    catId: string,
+    catTitle: string,
+    thumb: string,
+  ) {
     const cat = new LrtCategory();
     cat.categoryUrl = categoryUrl;
     cat.categoryId = catId;
+    cat.title = catTitle;
+    cat.thumb = thumb;
     this.lrtCategoriesRepository.save(cat).then();
   }
 
@@ -91,9 +111,7 @@ export class LrtApiSearchClient {
       const interim = body.indexOf('"', start);
       const end = body.indexOf('"', interim + 1);
       if (end > interim) {
-        const catId = body.substring(interim + 1, end);
-        this.saveCategory(categoryUrl, catId);
-        return catId;
+        return body.substring(interim + 1, end);
       } else {
         throw 'unexpected response body 1';
       }

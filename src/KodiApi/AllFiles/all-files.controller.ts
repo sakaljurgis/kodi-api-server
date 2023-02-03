@@ -2,7 +2,9 @@ import { Controller, Get, Head, Param, Req, Res } from '@nestjs/common';
 import ApiResponse from '../Dto/api-response.dto';
 import { AllFilesService } from './all-files.service';
 import { Request, Response } from 'express';
-import { TitleTypeEnum } from '../../VideoFiles/Enum/title-type.enum';
+import { TitleTypeEnum } from '../../Shared/Enum/title-type.enum';
+import { KodiApiResponse } from '../Dto/kodi-api-response.type';
+import NotificationResponse from '../Dto/notification-response.dto';
 
 @Controller('api/all')
 export class AllFilesController {
@@ -23,6 +25,16 @@ export class AllFilesController {
     return this.allFilesService.getListOfTitles(TitleTypeEnum.movie);
   }
 
+  @Get('scan')
+  scanNewFiles(): KodiApiResponse {
+    return this.allFilesService.scanNewFiles();
+  }
+
+  @Get('delete/:fileId')
+  async deleteFile(@Param('fileId') fileId: string): Promise<KodiApiResponse> {
+    return this.allFilesService.deleteFile(fileId);
+  }
+
   @Get('play/:fileId')
   @Head('play/:fileId')
   play(
@@ -37,7 +49,7 @@ export class AllFilesController {
   getTitle(
     @Param('titleId') titleId: string, //actually a number, how to cast?
     @Param('seasonId') seasonId: string, //actually a number, how to cast?
-  ): Promise<ApiResponse> {
+  ): Promise<KodiApiResponse> {
     return this.allFilesService.loadTitle(
       parseInt(titleId),
       parseInt(seasonId),

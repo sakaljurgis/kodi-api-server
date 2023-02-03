@@ -1,4 +1,4 @@
-import { FileEntity } from '../../VideoFiles/Entity/file.entity';
+import { FileEntity } from '../../Shared/Entity/file.entity';
 import { ReadStreamCreatable } from '../Interface/read-stream-creatable.interface';
 
 export interface ReadStreamCreatableProviderInterface {

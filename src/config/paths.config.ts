@@ -14,10 +14,6 @@ export class PathsConfig {
     return this.getPathByEnvKey('STATIC_SERVE_FOLDER');
   }
 
-  public getRecentSearchesFolder(): string {
-    return this.getPathByEnvKey('RECENT_SEARCHES_FOLDER');
-  }
-
   public getPathByEnvKey(key: string) {
     const relPath = this.configService.getEnv(key);
 

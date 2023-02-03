@@ -1,9 +1,11 @@
 import ResponseItem from './response-item.dto';
+import { NavigationItem } from '../../Shared/Dto/navigation-item.dto';
 
 export default class ApiResponse {
   items: Array<ResponseItem> = [];
   content = 'videos';
   updateList = true;
+  selectList: boolean | undefined;
   category: string | undefined;
   play: string | undefined;
   msgBoxOK: string | undefined;
@@ -37,6 +39,27 @@ export default class ApiResponse {
 
   setNoSort(value = true) {
     this.nosort = value;
+
+    return this;
+  }
+
+  setShowAsSelectList() {
+    this.updateList = false;
+    this.selectList = true;
+
+    return this;
+  }
+
+  addNavigationItems(navigationItems: NavigationItem[], pathPrefix = '') {
+    for (const [label, path, searchFor] of navigationItems) {
+      const item = this.createItem()
+        .setLabel(label)
+        .setToFolder()
+        .setPath(pathPrefix + path ?? '');
+      if (searchFor !== undefined) {
+        item.setActionSearch(searchFor);
+      }
+    }
 
     return this;
   }
