@@ -337,7 +337,9 @@ export class TorrentService {
       .catch(() => false);
 
     return new NotificationResponse(
-      result ? 'torrent deleted' : 'deleting from wt not implemented',
+      result
+        ? 'torrent deleted'
+        : 'deleting from wt not implemented, \nadd to transmission and delete',
       true,
     );
   }

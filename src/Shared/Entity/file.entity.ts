@@ -49,7 +49,7 @@ export class FileEntity {
   transmissionId: number;
 
   @Column()
-  linkomanija: boolean;
+  linkomanija: boolean; //todo - not linkomanija, but mustSeed (e.g. for torrentleech also)
 
   @Column({ name: 'torrent_id' })
   torrentId: number;

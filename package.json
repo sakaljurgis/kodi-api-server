@@ -40,7 +40,7 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
     "sqlite": "^4.1.2",
-    "sqlite3": "^5.1.2",
+    "sqlite3": "^5.1.5",
     "torrent-name-parser": "^0.6.5",
     "transmission": "^0.4.10",
     "typeorm": "^0.3.11",

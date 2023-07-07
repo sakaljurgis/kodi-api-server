@@ -3,6 +3,7 @@ import { LinkomanijaClient } from './linkomanija.client';
 import { LinkomanijaHttpClient } from './HttpClient/linkomanija-http.client';
 import { LinkomanijaResponseParser } from './ResponseParser/linkomanija-response.parser';
 
+//todo - make this as separate library
 @Module({
   imports: [],
   providers: [

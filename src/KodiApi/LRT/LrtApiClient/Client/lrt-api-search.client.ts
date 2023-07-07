@@ -27,7 +27,6 @@ export class LrtApiSearchClient {
 
     const loadedCategories = new Set();
 
-    //todo - move to mapper
     const responseDto = new SearchResponseDto(
       parseInt(searchResponse.page),
       parseInt(searchResponse.total_found),

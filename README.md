@@ -9,6 +9,7 @@ A rewrite attempt from "vanilla" node.js into framework based (Nest.js).
 No licence
 
 ## Migrations
+
 ```bash
 # create migration
 $ npm run typeorm:create-migration -name=CreateFilesTable
@@ -40,13 +41,4 @@ $ npm run start:prod
 
 ## Test
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
+this app is not tested 😞

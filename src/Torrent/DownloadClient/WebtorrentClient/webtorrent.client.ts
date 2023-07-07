@@ -14,7 +14,7 @@ import { TorrentSeedClient } from '../../SeedClient/torrent-seed.client';
 @Injectable()
 export class WebtorrentClient {
   private client: Instance;
-  private readonly torrentOptions: TorrentOptions;
+  //private readonly torrentOptions: TorrentOptions;
   private readonly configService = configService.getVideoFilesConfig();
 
   constructor(
@@ -27,9 +27,25 @@ export class WebtorrentClient {
   ) {
     this.client = new WebTorrent();
 
-    this.torrentOptions = {};
-    this.torrentOptions.path = this.configService.getTorrentDownloadDir();
-    this.torrentOptions.getAnnounceOpts = function() {
+    // this.torrentOptions = {};
+    // this.torrentOptions.path = this.configService.getTorrentDownloadDir();
+    // this.torrentOptions.getAnnounceOpts = function() {
+    //   const that = this as Torrent;
+    //
+    //   return {
+    //     uploaded: 0, //this.uploaded,
+    //     downloaded: 0, //this.downloaded,
+    //     left: that.length, //Math.max(this.length - this.downloaded, 0)
+    //   };
+    // };
+
+    this.resumeNotStopped();
+  }
+
+  getNewTorrentOptions(): TorrentOptions {
+    const torrentOptions: Record<string, any> = {};
+    torrentOptions.path = this.configService.getTorrentDownloadDir();
+    torrentOptions.getAnnounceOpts = function () {
       const that = this as Torrent;
 
       return {
@@ -39,7 +55,7 @@ export class WebtorrentClient {
       };
     };
 
-    this.resumeNotStopped();
+    return torrentOptions;
   }
 
   resumeNotStopped(): void {
@@ -123,7 +139,7 @@ export class WebtorrentClient {
       return new Promise((resolve, reject) => {
         const torrent = this.client.add(
           torrentEntity.magnet,
-          this.torrentOptions,
+          this.getNewTorrentOptions(),
         );
 
         torrent.on('ready', () => {

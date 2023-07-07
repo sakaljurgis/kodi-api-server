@@ -20,6 +20,7 @@ export class RequestLogMiddleware implements NestMiddleware {
       strIP = strRemoteAddress.substring(strRemoteAddress.lastIndexOf(':') + 1);
     }
 
+    //todo - x-forwarded-for
     if (!strIP || strIP === '1') {
       if (req.hostname === 'localhost') {
         strIP = '127.0.0.1';
