@@ -29,7 +29,10 @@ export class TorrentSeedClient {
       return Promise.reject('torrent not found');
     }
 
-    const torrInfo = await this.addTorrent(torrentEntity).catch(() => null);
+    const torrInfo = await this.addTorrent(torrentEntity).catch((e) => {
+      console.log(e);
+      return null;
+    });
 
     if (torrInfo) {
       await this.torrentRepository.update(

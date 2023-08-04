@@ -6,7 +6,7 @@ export class VideoFilesConfig {
   }
 
   public getVideoFilesFolders(): string[] {
-    return JSON.parse(this.configService.getEnv('VIDEO_FILES_FOLDERS'));
+    return [this.configService.getEnv('VIDEO_FILES_FOLDER')];
   }
 
   public getVideoFilesExt(): string[] {
@@ -18,17 +18,15 @@ export class VideoFilesConfig {
   }
 
   public getTorrentDownloadDir(): string {
-    return this.configService
-      .getPaths()
-      .getPathByEnvKey('TORRENT_DOWNLOAD_DIR');
+    return this.configService.getEnv('VIDEO_FILES_FOLDER');
   }
 
   public getTransmissionOptions() {
     return {
       host: this.configService.getEnv('TRANSMISSION_CLIENT_HOST'), // # default 'localhost'
       //port: 9091,             // # default 9091
-      //username: "username",   // # default blank
-      //password: "password",   // # default blank
+      username: this.configService.getEnv('TRANSMISSION_CLIENT_USER'), // # default blank
+      password: this.configService.getEnv('TRANSMISSION_CLIENT_PASSWORD'), // # default blank
       //ssl: true,              //# default false use https
       //url: "/my/other/url"    //   # default '/transmission/rpc'
     };

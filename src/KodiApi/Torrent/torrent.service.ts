@@ -322,7 +322,10 @@ export class TorrentService {
     const torrId = parseInt(id);
     const result = await this.torrSeedClient
       .addTorrentById(torrId)
-      .catch(() => false);
+      .catch((e) => {
+        console.log(e);
+        return false;
+      });
 
     return new NotificationResponse(
       result ? 'torrent added to transmission' : 'adding failed',

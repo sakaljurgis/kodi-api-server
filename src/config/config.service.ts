@@ -13,7 +13,7 @@ export class ConfigService {
   private videoFilesConfig: VideoFilesConfig = new VideoFilesConfig(this);
   private recentSearches: RecentSearchesConfig = new RecentSearchesConfig(this);
 
-  public getEnv(key: string): any {
+  public getEnv(key: string): string {
     return process.env[key];
   }
 

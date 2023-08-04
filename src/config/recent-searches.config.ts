@@ -6,9 +6,7 @@ export class RecentSearchesConfig {
   }
 
   public getRecentSearchesFolder(): string {
-    return this.configService
-      .getPaths()
-      .getPathByEnvKey('RECENT_SEARCHES_FOLDER');
+    return '/srv/data/recent-searches';
   }
 
   public getRecentSearchesLimit(): number {

@@ -7,11 +7,14 @@ export class PathsConfig {
   }
 
   public getStaticRequestsLogPath(): string {
-    return this.getPathByEnvKey('LOG_FILE_REQUESTS');
+    return join(
+      '/srv/data/requests-log',
+      this.configService.getEnv('LOG_FILE_REQUESTS_NAME'),
+    );
   }
 
   public getStaticFolder(): string {
-    return this.getPathByEnvKey('STATIC_SERVE_FOLDER');
+    return '/srv/data/static';
   }
 
   public getPathByEnvKey(key: string) {

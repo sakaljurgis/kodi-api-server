@@ -1,0 +1,19 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+#    working_dir: /srv/app/
+    volumes:
+      - .:/srv/app/
+      - $VIDEO_FILES_FOLDER:$VIDEO_FILES_FOLDER
+      - $LOG_FILE_REQUESTS_FOLDER:/srv/data/requests-log
+      - $STATIC_SERVE_FOLDER:/srv/data/static
+      - $DB_FOLDER:/srv/data/db
+      - $RECENT_SEARCHES_FOLDER:/srv/data/recent-searches
+    env_file:
+      - .env
+    ports:
+      - $PORT:$PORT
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
