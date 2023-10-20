@@ -14,13 +14,16 @@ export class RequestLogMiddleware implements NestMiddleware {
   }
 
   private extractIp(req: Request): string {
+    if (req.header('x-forwarded-for')) {
+      return req.header('x-forwarded-for');
+    }
+
     let strIP = 'unk_IP';
     const strRemoteAddress = req.socket.remoteAddress;
     if (strRemoteAddress != undefined) {
       strIP = strRemoteAddress.substring(strRemoteAddress.lastIndexOf(':') + 1);
     }
 
-    //todo - x-forwarded-for
     if (!strIP || strIP === '1') {
       if (req.hostname === 'localhost') {
         strIP = '127.0.0.1';
