@@ -6,19 +6,26 @@ export class VideoFilesConfig {
   }
 
   public getVideoFilesFolders(): string[] {
-    return [this.configService.getEnv('VIDEO_FILES_FOLDER')];
+    const folders: string[] = [];
+    Object.keys(process.env).forEach((key) => {
+      if (key.startsWith('VIDEO_FILES_FOLDER') && process.env[key]) {
+        folders.push(process.env[key]);
+      }
+    });
+
+    return folders;
   }
 
   public getVideoFilesExt(): string[] {
-    return JSON.parse(this.configService.getEnv('VIDEO_FILES_EXT'));
+    return ['.mkv', '.mp4', '.avi'];
   }
 
   public getPathPatternsToIgnore(): string[] {
     return JSON.parse(this.configService.getEnv('PATTERNS_TO_IGNORE'));
   }
 
-  public getTorrentDownloadDir(): string {
-    return this.configService.getEnv('VIDEO_FILES_FOLDER');
+  public getTorrentDownloadDirs(): string[] {
+    return this.getVideoFilesFolders();
   }
 
   public getTransmissionOptions() {

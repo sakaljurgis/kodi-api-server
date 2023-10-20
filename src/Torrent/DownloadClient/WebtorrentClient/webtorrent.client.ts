@@ -10,6 +10,7 @@ import { FileEntity } from '../../../Shared/Entity/file.entity';
 import { StreamProviderEnum } from '../../../Shared/Enum/stream-provider.enum';
 import { VideoFilesFacade } from '../../../VideoFiles/video-files.facade';
 import { TorrentSeedClient } from '../../SeedClient/torrent-seed.client';
+import process, { exec } from 'child_process';
 
 @Injectable()
 export class WebtorrentClient {
@@ -42,9 +43,13 @@ export class WebtorrentClient {
     this.resumeNotStopped();
   }
 
-  getNewTorrentOptions(): TorrentOptions {
+  async getNewTorrentOptions(): Promise<TorrentOptions> {
     const torrentOptions: Record<string, any> = {};
-    torrentOptions.path = this.configService.getTorrentDownloadDir();
+    //todo - risk! - torrent might be already downloaded on another folder
+    torrentOptions.path = await this.findPathWithMostSpace(
+      this.configService.getTorrentDownloadDirs(),
+    );
+    // torrentOptions.path = this.configService.getTorrentDownloadDir();
     torrentOptions.getAnnounceOpts = function () {
       const that = this as Torrent;
 
@@ -136,11 +141,9 @@ export class WebtorrentClient {
     }
 
     if (!torrent) {
+      const torrentOptions = await this.getNewTorrentOptions();
       return new Promise((resolve, reject) => {
-        const torrent = this.client.add(
-          torrentEntity.magnet,
-          this.getNewTorrentOptions(),
-        );
+        const torrent = this.client.add(torrentEntity.magnet, torrentOptions);
 
         torrent.on('ready', () => {
           resolve(torrent);
@@ -309,6 +312,54 @@ export class WebtorrentClient {
         this.torrentRepository.save(torrentEntity);
 
         return resolve();
+      });
+    });
+  }
+
+  private async findPathWithMostSpace(paths: string[]): Promise<string> {
+    const promises: Promise<{ path: string; free: number }>[] = [];
+    for (const path of paths) {
+      promises.push(this.getFreeSpace(path));
+    }
+
+    const results = await Promise.all(promises);
+    let maxSpace = 0;
+    let maxSpacePath = '';
+    for (const result of results) {
+      console.log(`testing path ${result.path} with ${result.free}KB`);
+      if (result.free > maxSpace) {
+        maxSpace = result.free;
+        maxSpacePath = result.path;
+      }
+    }
+
+    return maxSpacePath;
+  }
+
+  private getFreeSpace(path: string): Promise<{ path: string; free: number }> {
+    return new Promise((resolve, reject) => {
+      exec(`df ${path}`, (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        const rows = data.split('\n');
+        const fsData = rows[1].replace(/\s+/g, ' ').trim().split(' ');
+        const [
+          filesystem,
+          sizeInKB,
+          usedKB,
+          availableKB,
+          usePercentage,
+          mountPoint,
+        ] = fsData;
+
+        const availableKbNum = Number(availableKB);
+
+        if (isNaN(availableKbNum)) {
+          return reject(`availableKB not a number: ${availableKB}`);
+        }
+
+        resolve({ path, free: availableKbNum });
       });
     });
   }
