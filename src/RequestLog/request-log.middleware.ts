@@ -8,7 +8,9 @@ export class RequestLogMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const strIP = this.extractIp(req);
     this.log(strIP + ' ' + req.method + ' ' + decodeURI(req.url));
-    console.log(decodeURI(req.url));
+    if (configService.isDev()) {
+      console.log(decodeURI(req.url));
+    }
 
     next();
   }

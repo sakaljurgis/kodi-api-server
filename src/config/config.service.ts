@@ -38,6 +38,10 @@ export class ConfigService {
   public getRecentSearchesConfig(): RecentSearchesConfig {
     return this.recentSearches;
   }
+
+  public isDev(): boolean {
+    return this.getEnv('NODE_ENV') !== 'production';
+  }
 }
 
 export const configService = new ConfigService();

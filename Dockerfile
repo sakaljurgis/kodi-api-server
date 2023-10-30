@@ -10,8 +10,6 @@ RUN npm run typeorm:run-migrations
 
 EXPOSE $PORT
 
-# serve dev
-CMD ["npm", "run", "start:dev"]
+# start
+CMD ["npm", "run", "start"]
 
-#serve prod
-#CMD ["npm", "run", "start"]
