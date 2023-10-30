@@ -47,8 +47,8 @@ export class VideoFilesFacade {
    * Scan for new files and remove deleted.
    * Once all hooks are working correctly, this one shouldn't be needed anymore
    */
-  updateFsVideoFiles(): void {
-    this.videoFilesUpdateService.updateFsVideoFiles().then();
+  updateFsVideoFiles(refresh = false): void {
+    this.videoFilesUpdateService.updateFsVideoFiles(refresh).then();
   }
 
   addVideoFiles(

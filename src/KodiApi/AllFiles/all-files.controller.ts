@@ -30,6 +30,11 @@ export class AllFilesController {
     return this.allFilesService.scanNewFiles();
   }
 
+  @Get('scan-all')
+  scanAllFiles(): KodiApiResponse {
+    return this.allFilesService.scanAllFiles();
+  }
+
   @Get('delete/:fileId')
   async deleteFile(@Param('fileId') fileId: string): Promise<KodiApiResponse> {
     return this.allFilesService.deleteFile(fileId);

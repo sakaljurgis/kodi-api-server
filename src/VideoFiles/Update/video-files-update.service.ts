@@ -65,6 +65,9 @@ export class VideoFilesUpdateService {
     }
 
     await this.repository.saveFiles(entitiesToSave);
+    console.log(
+      `file scan and update complete - ${refresh ? 'full update' : 'only new'}`,
+    );
   }
 
   private isPathToIgnore(filePath: string): boolean {

@@ -26,6 +26,7 @@ export class AllFilesService {
           ['Movies', 'movie'],
           ['Shows', 'show'],
           ['Scan for new Files', 'scan'],
+          ['Re-Scan Files', 'scan-all'],
         ],
         'all/',
       )
@@ -199,6 +200,14 @@ export class AllFilesService {
     this.videoFilesFacade.updateFsVideoFiles();
     return this.koiApiResponseFactory.createNotificationResponse(
       'Scanning for new files and deleting old.',
+      false,
+    );
+  }
+
+  public scanAllFiles(): NotificationResponse {
+    this.videoFilesFacade.updateFsVideoFiles(true);
+    return this.koiApiResponseFactory.createNotificationResponse(
+      'Scanning for all files.',
       false,
     );
   }
