@@ -16,9 +16,9 @@ $ cp .env.example .env
 $ docker-compose up -d
 ```
 visit http://localhost:3000/if (or whatever port you have provided in .env file)
-kodi plugin should be able to connect to this server with the following settings:
+[KODI plugin](https://github.com/sakaljurgis/plugin.video.sklk) should be able to connect to this server with the following settings:
 - api url: http://localhost:3000/api
-- video url: http://localhost:3000 (video url is old relic from previous versions, it is probably not used anymore)
+- video url: http://localhost:3000
 
 ## Migrations (run inside docker container)
 

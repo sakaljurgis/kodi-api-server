@@ -10,5 +10,8 @@ if [ "$NODE_ENV" == "production" ]; then
     npm run start:prod
 else
   echo "Starting app in development mode"
+  echo "Running prebuild"
+  npm run prebuild
+  echo "Starting app"
   npm run start:dev
 fi

@@ -8,8 +8,8 @@ import { RecentSearchesConfig } from './recent-searches.config';
 env.config();
 
 export class ConfigService {
-  private typeOrmConfig: TypeOrmConfig = new TypeOrmConfig(this);
   private pathsConfig: PathsConfig = new PathsConfig(this);
+  private typeOrmConfig: TypeOrmConfig = new TypeOrmConfig(this);
   private videoFilesConfig: VideoFilesConfig = new VideoFilesConfig(this);
   private recentSearches: RecentSearchesConfig = new RecentSearchesConfig(this);
 

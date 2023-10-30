@@ -11,7 +11,7 @@ export class VideoFilesScannerService {
     this.config = configService.getVideoFilesConfig();
   }
 
-  public async scanNewFiles(): Promise<
+  public async scanFsForVideoFiles(): Promise<
     [paths: string[], pathToRelPath: Record<string, string>]
   > {
     let filesInFs = [];

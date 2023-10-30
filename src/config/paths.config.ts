@@ -23,6 +23,10 @@ export class PathsConfig {
     return this.getPath(relPath);
   }
 
+  public getDbFolderPath(): string {
+    return '/srv/data/db';
+  }
+
   private getPath(relPath: string) {
     if (relPath[0] === '/') {
       //this is an absolute path

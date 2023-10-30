@@ -9,7 +9,10 @@ import { join } from 'path';
 export class TypeOrmConfig {
   constructor(configService: ConfigService) {
     this.type = 'sqlite';
-    this.database = join('/srv/data/db', configService.getEnv('DB_FILENAME'));
+    this.database = join(
+      configService.getPaths().getDbFolderPath(),
+      configService.getEnv('DB_FILENAME'),
+    );
     this.entities = [LrtCategory, TitleEntity, FileEntity, TorrentEntity];
   }
   type: 'sqlite';

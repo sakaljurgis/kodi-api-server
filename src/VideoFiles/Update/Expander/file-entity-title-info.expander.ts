@@ -4,13 +4,17 @@ import { FileEntityExpanderInterface } from './file-entity-expander.interface';
 import { FileEntity } from 'src/Shared/Entity/file.entity';
 import { VideoFilesUpdateRepository } from '../video-files-update.repository';
 import { TitleTypeEnum } from '../../../Shared/Enum/title-type.enum';
+import { JsonFileDataStorageService } from '../../../DataStorage/json-file-data-storage.service';
 
 //todo - refactor this copy-paste, add types, ect.
 @Injectable()
 export class FileEntityTitleInfoExpander
   implements FileEntityExpanderInterface
 {
-  constructor(private readonly repository: VideoFilesUpdateRepository) {
+  constructor(
+    private readonly repository: VideoFilesUpdateRepository,
+    private readonly jsonFileDataStorageService: JsonFileDataStorageService,
+  ) {
     tnp.configure({ sample: /sample/i }, { sample: 'boolean' });
     tnp.configure({ year: /([\[\(]?((?:19[0-9][0-9]|20[0-2][0-9]))[\]\)]?)/ });
     tnp.configure({ container: /MKV|AVI|MP4|mkv|avi|mp4/i });
@@ -23,7 +27,7 @@ export class FileEntityTitleInfoExpander
     fileEntity.infos = JSON.stringify(titleInfo.infos);
     fileEntity.season = titleInfo.info.season;
     fileEntity.title = await this.repository.findOrCreateTitle(
-      titleInfo.info.title,
+      await this.checkForAliases(titleInfo.info.title),
       titleInfo.info.season ? TitleTypeEnum.show : TitleTypeEnum.movie,
     );
 
@@ -94,7 +98,6 @@ export class FileEntityTitleInfoExpander
     }
 
     combined.title = this.removePartNumberFromTitle(combined.title);
-    combined.title = this.checkForAliases(combined.title);
     return combined;
   }
 
@@ -111,23 +114,17 @@ export class FileEntityTitleInfoExpander
     return /^\d+$/.test(str);
   }
 
-  private checkForAliases(title) {
-    //todo - db or external file
-    const aliases = [
-      ['spider man', 'Spider Man'],
-      ['spiderman', 'Spider Man'],
-      ['spider-man', 'Spider Man'],
-      ['madagascar', 'Madagascar'],
-      ['ice age', 'Ice Age'],
-      ['hotel transylvania', 'Hotel Transylvania'],
-      ['despicable me', 'Despicable Me'],
-      ['the matrix', 'The Matrix'],
-      ['frozen', 'Frozen'],
-      ['garfield', 'Garfield'],
-      ['harry potter', 'Harry Potter'],
-      ['fifty shades', 'Fifty Shades'],
-      ['lilo', 'Lilo and Stitch'],
-    ];
+  /**
+   * Check if title matches any of the aliases and return the alias if it does
+   * @param title
+   * @private
+   */
+  private async checkForAliases(title) {
+    type Alias = [string, string];
+    const aliases: Alias[] = await this.jsonFileDataStorageService.get<Alias[]>(
+      'aliases',
+      [],
+    );
 
     for (let i = 0; i < aliases.length; i++) {
       const [pattern, alias] = aliases[i];

@@ -18,17 +18,27 @@ export class VideoFilesUpdateService {
     private readonly expander: FileEntityExpander,
   ) {}
 
-  async updateFsVideoFiles(): Promise<void> {
-    const [filesInFs, filesToRelativePaths] = await this.scanner.scanNewFiles();
+  /**
+   * Scan for new files and remove deleted.
+   * Refresh is used to force a refresh of all files
+   *   i.e. existing files db will be parsed on new rules (e.g. new aliases)
+   * @param refresh
+   */
+  async updateFsVideoFiles(refresh = false): Promise<void> {
+    const [filesInFs, filesToRelativePaths] =
+      await this.scanner.scanFsForVideoFiles();
 
     await this.repository.markRemovedFilesAsDeleted(filesInFs);
 
-    const filesInDb = await this.repository.getMatchingPaths(filesInFs);
-    const filesToAddToDb = filesInFs.filter(
-      (filePath) =>
-        !filesInDb.includes(filePath) && !this.isPathToIgnore(filePath),
-    );
+    let filesToAddToDb: string[] = filesInFs;
 
+    if (!refresh) {
+      const filesInDb = await this.repository.getMatchingPaths(filesInFs);
+      filesToAddToDb = filesInFs.filter(
+        (filePath) =>
+          !filesInDb.includes(filePath) && !this.isPathToIgnore(filePath),
+      );
+    }
     const entitiesToSave = [];
 
     for (const fileToAddToDb of filesToAddToDb) {
@@ -38,6 +48,7 @@ export class VideoFilesUpdateService {
       );
 
       //check if download is complete
+      //todo - figure out if this makes sense
       if (
         fileEntity.streamProvider === StreamProviderEnum.wt &&
         fileEntity.torrent &&
