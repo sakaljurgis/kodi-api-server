@@ -6,7 +6,7 @@ export class CreateTitlesTable1672729964237 implements MigrationInterface {
       `create table titles
        (
            id    INTEGER
-               primary key,
+               primary key autoincrement,
            title VARCHAR(512),
            type  VARCHAR(50)
        );`,

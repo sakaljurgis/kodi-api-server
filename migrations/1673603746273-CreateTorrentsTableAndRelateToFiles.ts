@@ -16,7 +16,7 @@ export class CreateTorrentsTableAndRelateToFiles1673603746273
     await queryRunner.query(
       `create table torrents
        (
-           id              INTEGER primary key,
+           id              INTEGER primary key autoincrement,
            magnet          VARCHAR(512),
            name            VARCHAR(256),
            path            VARCHAR(512),
