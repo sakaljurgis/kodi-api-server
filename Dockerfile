@@ -6,7 +6,6 @@ RUN apt-get install ffmpeg -y
 WORKDIR /srv/app
 COPY ./ /srv/app
 RUN npm install
-RUN npm run typeorm:run-migrations
 
 EXPOSE $PORT
 

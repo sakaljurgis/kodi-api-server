@@ -25,6 +25,7 @@ export class CreateTorrentsTableAndRelateToFiles1673603746273
            info_hash       VARCHAR(64),
            progress        REAL,
            transmission_id INTEGER,
+           linkomanija     TINYINT,
            info            TEXT
        );`,
     );
