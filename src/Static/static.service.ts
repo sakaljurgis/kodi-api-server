@@ -12,6 +12,7 @@ import { configService } from '../config/config.service';
 @Injectable()
 export class StaticService {
   async provideDirIndex(relPath: string): Promise<Array<FileDto>> {
+    relPath = decodeURI(relPath);
     if (relPath.indexOf('..') > -1) {
       throw new UnauthorizedException(
         'You are not authorized to visit ' + relPath,
@@ -23,7 +24,7 @@ export class StaticService {
     const stats: Stats | false = await stat(path).catch(() => false);
 
     if (stats === false) {
-      throw new NotFoundException('Path not found: ' + relPath);
+      throw new NotFoundException('Path is is not found: ' + relPath);
     }
 
     if (!stats.isDirectory()) {
