@@ -9,7 +9,7 @@ export class CreateTorrentsTableAndRelateToFiles1673603746273
     );
 
     await queryRunner.query(
-      `create unique index file_torrent_id
+      `create index file_torrent_id
           on files (torrent_id);`,
     );
 
