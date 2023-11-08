@@ -25,6 +25,9 @@ export class VideoFilesUpdateService {
    * @param refresh
    */
   async updateFsVideoFiles(refresh = false): Promise<void> {
+    console.log(
+      `file scan and update started - ${refresh ? 'full update' : 'only new'}`,
+    );
     const [filesInFs, filesToRelativePaths] =
       await this.scanner.scanFsForVideoFiles();
 
