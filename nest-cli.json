@@ -8,6 +8,11 @@
         "include": "KodiApiInterface/View/",
         "outDir": "dist/src",
         "watchAssets": true
+      },
+      {
+        "include": "AliasesModule/View/",
+        "outDir": "dist/src",
+        "watchAssets": true
       }
     ]
   }

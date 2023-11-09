@@ -1,0 +1,109 @@
+<html>
+
+<head>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/css/jsoneditor.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+        integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+
+</head>
+
+<body>
+<div class="container">
+  <div>
+    <div id="editor"></div>
+  </div>
+  <hr />
+  <div id="button">
+    <button class="btn btn-dark" onclick="handleClick()">OK</button>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
+        crossorigin="anonymous"></script>
+<script>
+  const element = document.getElementById("editor");
+
+  function tuplesToObj(arrOfTuples) {
+    const ret = [];
+    arrOfTuples.forEach(element => {
+      ret.push({ alias: element[0], title: element[1] });
+    });
+
+    return ret;
+  }
+
+  function objToTuples(arrOfObjs) {
+    const ret = [];
+    arrOfObjs.forEach(element => {
+      ret.push([element.alias, element.title]);
+    });
+
+    return ret;
+  }
+
+  const editor = new JSONEditor(element, {
+    ajax: true,
+    schema: { "$ref": "/aliases/schema" },
+    theme: "bootstrap4"
+  });
+
+  editor.on("ready", () => {
+    editor.validate();
+    fetch("/aliases/data").then((response) => {
+      return response.json();
+    }).then((data) => {
+      editor.setValue(tuplesToObj(data));
+    });
+  });
+
+  function handleClick() {
+    const tuples = objToTuples(editor.getValue());
+    console.log(tuples);
+    fetch("", {
+      body: JSON.stringify(tuples),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then((response) => {
+        return response.json();
+      }).then((data) => {
+      if (data.response && data.response.statusCode) {
+        // workaround for success message actually being failure see HttpExceptionFilter
+        addAlert(false, data.notification ?? data.response.message);
+      } else {
+        editor.setValue(tuplesToObj(data));
+        addAlert(true);
+      }
+    })
+      .catch(() => {
+        addAlert(false);
+      });
+  }
+
+  function addAlert(success = true, msg = "") {
+    const html = success ?
+      `<div class="alert alert-success alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <strong>Success!</strong> saved. ${msg}
+      </div>
+      ` :
+      `
+      <div class="alert alert-danger alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <strong>Failed!</strong> not saved. ${msg}
+      </div>
+      `;
+
+    $("#button").append(html);
+  }
+</script>
+</body>
+
+</html>
