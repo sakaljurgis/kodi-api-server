@@ -106,6 +106,10 @@
       return;
     }
 
+    if (result.updateList === false || result.refreshContainer === false) {
+      paths.pop();
+    }
+
     if (result.content) {
       $("#cont").text(result.content);
     }
@@ -259,7 +263,7 @@ let videoPlayer;
     itemsHtml = itemsHtml + itemHtml;
     itemsHtml = itemsHtml + "</div>";
 
-    $("#path").val("http://sklk.lt:8181" + urlPath);
+    $("#path").val(window.location.origin + urlPath);
 
     let contentElement = $("#content");
 
