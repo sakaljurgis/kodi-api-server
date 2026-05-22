@@ -62,10 +62,10 @@
   function okClicked() {
     let path = document.getElementById("endpoint").value;
     paths = [""];
-    loadApiPath(path);
+    loadApiPath(path, "replace");
   }
 
-  function loadApiPath(path) {
+  function loadApiPath(path, historyMode) {
     $.ajax({
       url: path,
       success: function(result) {
@@ -75,13 +75,36 @@
         } else {
           $("#debug").html("");
         }
+        // mirror our in-memory navigation into the browser history so the
+        // back/forward buttons move between views instead of leaving /if
+        if (historyMode === "push") {
+          history.pushState({ paths: paths.slice(), url: path }, "");
+        } else if (historyMode === "replace") {
+          history.replaceState({ paths: paths.slice(), url: path }, "");
+        }
         processApiResult(result);
       }
     });
   }
 
+  window.addEventListener("popstate", function(e) {
+    if (e.state && e.state.paths) {
+      paths = e.state.paths.slice();
+      loadApiPath(e.state.url);
+    }
+  });
+
   function processApiResult(result) {
     if (!result) return; //todo error
+
+    let endpoint = document.getElementById("endpoint").value;
+
+    // context-menu actions don't refresh the container by default, so the api
+    // can return forceUpdate to re-query and re-render the current list
+    if (result.forceUpdate) {
+      loadApiPath(endpoint + "?path=" + result.forceUpdate.urlParams.path);
+      return;
+    }
 
     if (result.msgBoxOK) {
       $("#modalBody").text(result.msgBoxOK);
@@ -91,6 +114,13 @@
     if (result.notification) {
       $("#modalBody").text(result.notification);
       $("#modal").modal("show");
+      if (result.refreshContainer === false) {
+        paths.pop();
+      } else {
+        // reload the current container so the action's effect is visible
+        loadApiPath(endpoint + "?path=" + paths[paths.length - 1]);
+      }
+      return;
     }
 
     if (result.play) {
@@ -170,7 +200,15 @@
 
       for (let i = 0; i < result.items.length; i++) {
         let item = result.items[i];
-        let itemHtml = "<button type=\"button\" class=\"list-group-item list-group-item-action\"";
+        let hasContextMenus = item.contextMenus && item.contextMenus.length;
+
+        // context-menu items live inside a flex row, so the action area is a plain
+        // button and the row wrapper carries the list-group-item styling
+        let btnClass = hasContextMenus
+          ? "btn text-start flex-grow-1 border-0 py-2 px-3"
+          : "list-group-item list-group-item-action";
+
+        let itemHtml = "<button type=\"button\" class=\"" + btnClass + "\"";
         itemHtml = itemHtml + " data-path=\"" + item.path + "\"";
         if (item.searchFor) {
           itemHtml = itemHtml + " data-searchfor=\"" + item.searchFor + "\"";
@@ -189,6 +227,21 @@
         itemHtml = itemHtml + ">";
 
         itemHtml = itemHtml + itemIcon + " " + item.label + (item.plot ? "<div class=\"fw-lighter\">" + item.plot + "</div>" : "") + "</button>";
+
+        if (hasContextMenus) {
+          let menuHtml = "<div class=\"dropdown me-2\">";
+          menuHtml = menuHtml + "<button type=\"button\" class=\"btn btn-sm btn-outline-secondary\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\"><i class=\"bi-three-dots-vertical\"></i></button>";
+          menuHtml = menuHtml + "<ul class=\"dropdown-menu dropdown-menu-end\">";
+          for (let j = 0; j < item.contextMenus.length; j++) {
+            let cm = item.contextMenus[j];
+            let cmPath = cm.urlParams ? cm.urlParams.path : cm.path;
+            menuHtml = menuHtml + "<li><button type=\"button\" class=\"dropdown-item\" data-cm-path=\"" + cmPath + "\">" + cm.name + "</button></li>";
+          }
+          menuHtml = menuHtml + "</ul></div>";
+
+          itemHtml = "<div class=\"list-group-item d-flex justify-content-between align-items-center p-0\">" + itemHtml + menuHtml + "</div>";
+        }
+
         itemsHtml = itemsHtml + itemHtml;
       }
       itemsHtml = itemsHtml + "</div>";
@@ -197,30 +250,48 @@
 
   }
 
-  $(document).click("button", function(e) {
+  $(document).click(function(e) {
     //todo - disable navigation after click
 
-    let path = $(e.target).data("path");
-    let folder = $(e.target).data("folder");
-    let playable = $(e.target).data("playable");
-    let action = $(e.target).data("action");
-    let searchFor = $(e.target).data("searchfor");
     let endpoint = document.getElementById("endpoint").value;
+
+    // a context-menu option was selected -> query its path, same as action "query"
+    let cmEl = $(e.target).closest("[data-cm-path]");
+    if (cmEl.length) {
+      loadApiPath(endpoint + "?path=" + cmEl.attr("data-cm-path"));
+      return;
+    }
+
+    // resolve the clicked item from the closest element holding item data,
+    // so clicks on the inner icon/plot still navigate
+    let itemEl = $(e.target).closest("[data-path]");
+    if (!itemEl.length) {
+      return;
+    }
+
+    let path = itemEl.data("path");
+    let folder = itemEl.data("folder");
+    let playable = itemEl.data("playable");
+    let action = itemEl.data("action");
+    let searchFor = itemEl.data("searchfor");
 
     if (folder && path) {
       //navigate?
-      if (path === ".." || path === ".") {
-        if (paths.length > 1 && path === "..") {
-          paths.pop();
-        }
-
-        path = paths[paths.length - 1];
-
-      } else {
-        paths.push(path);
+      if (path === "..") {
+        // go up a level via history so browser-back and in-page back stay in
+        // sync; popstate restores the parent's paths snapshot and reloads it
+        history.back();
+        return;
       }
 
-      loadApiPath(endpoint + "?path=" + path);
+      if (path === ".") {
+        // refresh the current container (e.g. player "Back"), no history change
+        loadApiPath(endpoint + "?path=" + paths[paths.length - 1]);
+        return;
+      }
+
+      paths.push(path);
+      loadApiPath(endpoint + "?path=" + path, "push");
       return;
     }
 
@@ -242,7 +313,7 @@
       let searchText = prompt("What are you searching for?", iSearchFor);
       if (searchText) {
         paths.push(path + "&search=" + searchText);
-        loadApiPath(endpoint + "?path=" + path + "&search=" + searchText);
+        loadApiPath(endpoint + "?path=" + path + "&search=" + searchText, "push");
       }
     }
 
