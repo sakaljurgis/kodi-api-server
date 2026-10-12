@@ -4,6 +4,7 @@ import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-clas
 import { TitleEntity } from '../Shared/Entity/title.entity';
 import { FileEntity } from '../Shared/Entity/file.entity';
 import { TorrentEntity } from '../Shared/Entity/torrent.entity';
+import { WatchStateEntity } from '../Shared/Entity/watch-state.entity';
 import { join } from 'path';
 
 export class TypeOrmConfig {
@@ -13,7 +14,13 @@ export class TypeOrmConfig {
       configService.getPaths().getDbFolderPath(),
       configService.getEnv('DB_FILENAME'),
     );
-    this.entities = [LrtCategory, TitleEntity, FileEntity, TorrentEntity];
+    this.entities = [
+      LrtCategory,
+      TitleEntity,
+      FileEntity,
+      TorrentEntity,
+      WatchStateEntity,
+    ];
   }
   type: 'sqlite';
   database: string;

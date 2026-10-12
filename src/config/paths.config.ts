@@ -8,13 +8,19 @@ export class PathsConfig {
 
   public getStaticRequestsLogPath(): string {
     return join(
-      '/srv/data/requests-log',
+      this.getDataRoot(),
+      'requests-log',
       this.configService.getEnv('LOG_FILE_REQUESTS_NAME'),
     );
   }
 
   public getStaticFolder(): string {
-    return '/srv/data/static';
+    return join(this.getDataRoot(), 'static');
+  }
+
+  /** the docker volumes; DATA_ROOT overrides it, e.g. for a local run outside docker */
+  public getDataRoot(): string {
+    return this.configService.getEnv('DATA_ROOT') || '/srv/data';
   }
 
   public getPathByEnvKey(key: string) {
@@ -24,7 +30,7 @@ export class PathsConfig {
   }
 
   public getDbFolderPath(): string {
-    return '/srv/data/db';
+    return join(this.getDataRoot(), 'db');
   }
 
   private getPath(relPath: string) {

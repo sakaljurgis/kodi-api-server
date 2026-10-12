@@ -1,4 +1,5 @@
 import ContextMenu from './context-menu.dto';
+import { WatchStateEntity } from '../../Shared/Entity/watch-state.entity';
 
 export default class ResponseItem {
   isFolder = false;
@@ -15,6 +16,16 @@ export default class ResponseItem {
   contextMenus: Array<ContextMenu>;
   date: string;
   searchFor: string;
+  /** files: watch state like Kodi's, resume point in seconds */
+  playcount: number;
+  resume: { position: number; total: number };
+  lastplayed: string;
+  /** folders: watched episodes out of the total */
+  watchedCount: number;
+  totalCount: number;
+  /** files listed outside their folder (Continue watching): where they are */
+  folder: string;
+  folderTitle: string;
 
   constructor() {
     this.setToPlayable();
@@ -96,6 +107,40 @@ export default class ResponseItem {
 
   setDate(date: string) {
     this.date = date;
+
+    return this;
+  }
+
+  /** call after setDuration, it's the fallback for the resume total */
+  setWatchState(state: WatchStateEntity | undefined) {
+    this.playcount = state?.playCount ?? 0;
+    if (state?.position > 0) {
+      this.resume = {
+        position: state.position,
+        total: state.duration ?? this.duration ?? 0,
+      };
+    }
+    if (state?.lastPlayed) {
+      // Kodi's format
+      this.lastplayed = new Date(state.lastPlayed)
+        .toISOString()
+        .replace('T', ' ')
+        .slice(0, 19);
+    }
+
+    return this;
+  }
+
+  setWatchedCount(watched: number, total: number) {
+    this.watchedCount = watched;
+    this.totalCount = total;
+
+    return this;
+  }
+
+  setFolder(path: string, title: string) {
+    this.folder = path;
+    this.folderTitle = title;
 
     return this;
   }

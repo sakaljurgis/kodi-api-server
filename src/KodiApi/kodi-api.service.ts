@@ -13,11 +13,18 @@ export class KodiApiService {
       .createApiResponse()
       .setTitle('Menu')
       .addNavigationItems([
-        ['All Files', 'all'],
-        ['Torr', 'torr'],
-        ['LRT.lt', 'lrt'],
+        ['Continue watching', 'all/continue'],
+        // the "All Files" menu, inlined
+        ['Movies', 'all/movie'],
+        ['Shows', 'all/show'],
+        ['Scan for new Files', 'all/scan'],
+        ['Re-Scan Files', 'all/scan-all'],
+        // not used at the moment, still reachable by path
+        //['Torr', 'torr'],
+        //['LRT.lt', 'lrt'],
         //['Test', 'test'],
-      ]);
+      ])
+      .setNoSort();
   }
 
   getCurrentTest() {

@@ -1,4 +1,5 @@
 import { ConfigService } from './config.service';
+import { join } from 'path';
 
 export class RecentSearchesConfig {
   constructor(private readonly configService: ConfigService) {
@@ -6,7 +7,7 @@ export class RecentSearchesConfig {
   }
 
   public getRecentSearchesFolder(): string {
-    return '/srv/data/recent-searches';
+    return join(this.configService.getPaths().getDataRoot(), 'recent-searches');
   }
 
   public getRecentSearchesLimit(): number {

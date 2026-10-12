@@ -40,6 +40,52 @@ export class AllFilesController {
     return this.allFilesService.deleteFile(fileId);
   }
 
+  @Get('continue')
+  getContinueWatching(): Promise<ApiResponse> {
+    return this.allFilesService.getContinueWatching();
+  }
+
+  @Get('watched/:fileId')
+  markWatched(@Param('fileId') fileId: string): Promise<KodiApiResponse> {
+    return this.allFilesService.setWatched(fileId, true);
+  }
+
+  @Get('unwatched/:fileId')
+  markUnwatched(@Param('fileId') fileId: string): Promise<KodiApiResponse> {
+    return this.allFilesService.setWatched(fileId, false);
+  }
+
+  @Get('watched-title/:titleId/:seasonId?')
+  markTitleWatched(
+    @Param('titleId') titleId: string,
+    @Param('seasonId') seasonId: string,
+  ): Promise<KodiApiResponse> {
+    return this.allFilesService.setTitleWatched(
+      parseInt(titleId),
+      parseInt(seasonId),
+      true,
+    );
+  }
+
+  @Get('unwatched-title/:titleId/:seasonId?')
+  markTitleUnwatched(
+    @Param('titleId') titleId: string,
+    @Param('seasonId') seasonId: string,
+  ): Promise<KodiApiResponse> {
+    return this.allFilesService.setTitleWatched(
+      parseInt(titleId),
+      parseInt(seasonId),
+      false,
+    );
+  }
+
+  @Get('hide/:fileId')
+  hideFromContinueWatching(
+    @Param('fileId') fileId: string,
+  ): Promise<KodiApiResponse> {
+    return this.allFilesService.hideFromContinueWatching(fileId);
+  }
+
   @Get('play/:fileId')
   @Head('play/:fileId')
   play(

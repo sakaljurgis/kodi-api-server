@@ -4,9 +4,10 @@ import { AllFilesService } from './all-files.service';
 import { KodiApiResponseFactory } from '../kodi-api-response.factory';
 import { StreamerModule } from '../../Streamer/streamer.module';
 import { VideoFilesModule } from '../../VideoFiles/video-files.module';
+import { WatchStateModule } from '../../WatchState/watch-state.module';
 
 @Module({
-  imports: [StreamerModule, VideoFilesModule],
+  imports: [StreamerModule, VideoFilesModule, WatchStateModule],
   controllers: [AllFilesController],
   providers: [AllFilesService, KodiApiResponseFactory],
   exports: [AllFilesService],
