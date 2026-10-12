@@ -15,6 +15,8 @@ import { PlaybackReport } from './Dto/playback-report.dto';
 const WATCHED_RATIO = 0.9;
 /** earlier positions don't move the resume point, so a quick open/close keeps it */
 const MIN_POSITION = 10;
+/** Continue watching only goes this far back, older activity doesn't crowd it */
+const CONTINUE_WATCHING_MONTHS = 3;
 
 export type WatchStates = Map<number, WatchStateEntity>;
 
@@ -147,14 +149,18 @@ export class WatchStateService {
   /**
    * What to watch next, one file per title, latest activity first: the title's
    * last played file while it's unfinished, or for shows the next unwatched
-   * episode after it. Finished movies and shows are left out, and so are files
-   * hidden from Continue watching.
+   * episode after it. Only titles played in the last CONTINUE_WATCHING_MONTHS;
+   * finished movies and shows are left out, and so are files hidden from
+   * Continue watching.
    * Files come with their title and torrent.
    */
   async getContinueWatching(
     states: WatchStates,
     limit = 20,
   ): Promise<FileEntity[]> {
+    const since = new Date();
+    since.setMonth(since.getMonth() - CONTINUE_WATCHING_MONTHS);
+
     const fileEntities = await this.fileRepository
       .createQueryBuilder('file')
       .leftJoinAndSelect('file.title', 'title')
@@ -164,8 +170,9 @@ export class WatchStateService {
         `file.title_id IN (
           SELECT f.title_id FROM files f
           INNER JOIN watch_state s ON s.file_id = f.id
-          WHERE s.last_played IS NOT NULL
+          WHERE s.last_played >= :since
         )`,
+        { since: since.getTime() },
       )
       .getMany();
 
@@ -187,7 +194,8 @@ export class WatchStateService {
       const last = titleFiles.reduce((latest, fileEntity) =>
         lastPlayed(fileEntity) >= lastPlayed(latest) ? fileEntity : latest,
       );
-      if (lastPlayed(last) === 0) {
+      // (the recent activity may have been on a file deleted since)
+      if (lastPlayed(last) < since.getTime()) {
         return;
       }
 
