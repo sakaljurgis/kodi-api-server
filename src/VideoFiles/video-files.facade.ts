@@ -51,6 +51,11 @@ export class VideoFilesFacade {
     this.videoFilesUpdateService.updateFsVideoFiles(refresh).then();
   }
 
+  /** title and season of every file again; how many files changed */
+  reparseTitles(): Promise<number> {
+    return this.videoFilesUpdateService.reparseTitles();
+  }
+
   addVideoFiles(
     partialFileEntities: Partial<FileEntity>[],
   ): Promise<FileEntity[]> {

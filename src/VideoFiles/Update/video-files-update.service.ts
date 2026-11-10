@@ -6,6 +6,8 @@ import { FileEntity } from '../../Shared/Entity/file.entity';
 import { StreamProviderEnum } from '../../Shared/Enum/stream-provider.enum';
 import { configService } from '../../config/config.service';
 import { VideoFilesConfig } from '../../config/video-files.config';
+import { FileEntityTitleInfoExpander } from './Expander/file-entity-title-info.expander';
+import { getReleaseFolder, isSample } from '../../Shared/Util/file-order';
 
 @Injectable()
 export class VideoFilesUpdateService {
@@ -16,15 +18,23 @@ export class VideoFilesUpdateService {
     private readonly scanner: VideoFilesScannerService,
     private readonly repository: VideoFilesUpdateRepository,
     private readonly expander: FileEntityExpander,
+    private readonly titleInfoExpander: FileEntityTitleInfoExpander,
   ) {}
+
+  /** scans and title re-parses run one at a time */
+  private queue: Promise<unknown> = Promise.resolve();
 
   /**
    * Scan for new files and remove deleted.
    * Refresh is used to force a refresh of all files
-   *   i.e. existing files db will be parsed on new rules (e.g. new aliases)
+   *   i.e. existing files db will be parsed on new rules (e.g. new title rules)
    * @param refresh
    */
-  async updateFsVideoFiles(refresh = false): Promise<void> {
+  updateFsVideoFiles(refresh = false): Promise<void> {
+    return this.oneAtATime(() => this.scanAndUpdate(refresh));
+  }
+
+  private async scanAndUpdate(refresh: boolean): Promise<void> {
     console.log(
       `file scan and update started - ${refresh ? 'full update' : 'only new'}`,
     );
@@ -67,6 +77,7 @@ export class VideoFilesUpdateService {
       entitiesToSave.push(fileEntity);
     }
 
+    await this.attachSamplesToReleases(entitiesToSave);
     await this.repository.saveFiles(entitiesToSave);
     console.log(
       `file scan and update complete - ${refresh ? 'full update' : 'only new'}`,
@@ -105,6 +116,7 @@ export class VideoFilesUpdateService {
       fileEntitiesToUpdate.push(fileEntity);
     }
 
+    await this.attachSamplesToReleases(fileEntitiesToUpdate);
     await this.repository.saveFiles(fileEntitiesToUpdate);
   }
 
@@ -124,6 +136,7 @@ export class VideoFilesUpdateService {
       entitiesToSave.push(fileEntity);
     }
 
+    await this.attachSamplesToReleases(entitiesToSave);
     await this.repository.saveFiles(entitiesToSave);
 
     return this.repository.findFilesByPaths(
@@ -131,5 +144,88 @@ export class VideoFilesUpdateService {
         return fileEntity.path;
       }),
     );
+  }
+
+  /**
+   * Title and season of every file again (no re-scan), e.g. after the title
+   * rules changed. Returns how many files got another title or season.
+   */
+  reparseTitles(): Promise<number> {
+    return this.oneAtATime(async () => {
+      const fileEntities = await this.repository.findActiveFiles();
+      const titleKey = (fileEntity: FileEntity) =>
+        `${fileEntity.title?.id}|${fileEntity.season ?? null}`;
+      const before = new Map(
+        fileEntities.map((fileEntity) => [
+          fileEntity.id,
+          {
+            title: titleKey(fileEntity),
+            info: fileEntity.info + fileEntity.infos,
+          },
+        ]),
+      );
+
+      for (const fileEntity of fileEntities) {
+        await this.titleInfoExpander.expand(fileEntity);
+      }
+      await this.attachSamplesToReleases(fileEntities);
+
+      const changed = new Set(
+        fileEntities.filter(
+          (fileEntity) =>
+            before.get(fileEntity.id).title !== titleKey(fileEntity),
+        ),
+      );
+      await this.repository.saveTitleInfo(
+        fileEntities.filter(
+          (fileEntity) =>
+            changed.has(fileEntity) ||
+            before.get(fileEntity.id).info !==
+              fileEntity.info + fileEntity.infos,
+        ),
+      );
+
+      return changed.size;
+    });
+  }
+
+  /**
+   * A sample gets the title of its release (a show's sample isn't a movie of
+   * its own), and its season if it has none: of a file saved with it, else of
+   * one in the db.
+   */
+  private async attachSamplesToReleases(
+    fileEntities: FileEntity[],
+  ): Promise<void> {
+    for (const sample of fileEntities.filter((file) => isSample(file))) {
+      const folder = getReleaseFolder(sample.relativePath);
+      if (!folder) {
+        continue;
+      }
+
+      const releaseFile =
+        fileEntities
+          .filter(
+            (file) =>
+              file.title &&
+              !isSample(file) &&
+              getReleaseFolder(file.relativePath) === folder,
+          )
+          .sort((a, b) => (a.season ?? 0) - (b.season ?? 0))[0] ??
+        (await this.repository.findReleaseFile(folder));
+
+      if (releaseFile?.title) {
+        sample.title = releaseFile.title;
+        sample.titleId = releaseFile.title.id;
+        sample.season = sample.season ?? releaseFile.season ?? null;
+      }
+    }
+  }
+
+  private oneAtATime<T>(job: () => Promise<T>): Promise<T> {
+    const run = this.queue.then(job, job);
+    this.queue = run.catch(() => undefined);
+
+    return run;
   }
 }

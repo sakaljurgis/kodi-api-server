@@ -19,6 +19,12 @@ export function isSample(fileEntity: FileEntity): boolean {
   return /\bsample\b/i.test(fileEntity.fileName);
 }
 
+/** the first segment of a relative path, none for a file that's not in a folder */
+export function getReleaseFolder(relativePath: string): string | undefined {
+  const slash = relativePath?.indexOf('/') ?? -1;
+  return slash > 0 ? relativePath.slice(0, slash) : undefined;
+}
+
 /**
  * Files that are the same episode (e.g. two releases of S01E01) share a key,
  * files without an episode number are each their own.

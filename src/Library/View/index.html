@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Library</title>
+  <style>
+    :root {
+      --bg: #f6f7f9; --panel: #fff; --text: #1d2228; --muted: #6b7480; --line: #e2e5ea;
+      --accent: #2f6fde; --accent-text: #fff; --hover: #eef2f8; --sel: #e3ecfc;
+      --movie: #8a5a00; --movie-bg: #fdf1d8; --show: #1f6b45; --show-bg: #dcf3e6;
+      --err: #b42318; --err-bg: #fde8e6; --ok-bg: #1d2228; --ok-text: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14171b; --panel: #1c2026; --text: #e6e9ed; --muted: #8d96a1; --line: #2c323a;
+        --accent: #5b8ff0; --accent-text: #0b0d10; --hover: #232932; --sel: #22314b;
+        --movie: #f0c36a; --movie-bg: #3a2e14; --show: #7fd3a5; --show-bg: #173326;
+        --err: #ff9b90; --err-bg: #3d1c19; --ok-bg: #e6e9ed; --ok-text: #14171b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
+    header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+    header h1 { font-size: 16px; margin: 0; }
+    nav { display: flex; gap: 4px; }
+    nav a { padding: 5px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+    nav a.on { background: var(--sel); color: var(--text); }
+    header .spacer { flex: 1; }
+    button, input, select { font: inherit; color: inherit; }
+    input, select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; min-width: 0; }
+    button { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+    button:hover { background: var(--hover); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    button.link { border: 0; background: none; color: var(--accent); padding: 0 4px; }
+    button:disabled { opacity: .5; cursor: default; }
+    main { padding: 16px; }
+    .cols { display: grid; grid-template-columns: minmax(260px, 380px) 1fr; gap: 16px; align-items: start; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    .list-head { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; border-bottom: 1px solid var(--line); }
+    .list-head input[type=search] { flex: 1 1 160px; }
+    .count { color: var(--muted); font-size: 12px; padding: 4px 10px; border-bottom: 1px solid var(--line); }
+    #list { max-height: calc(100vh - 170px); overflow: auto; }
+    .row { padding: 7px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .row:hover { background: var(--hover); }
+    .row.sel { background: var(--sel); }
+    .row .top { display: flex; gap: 8px; align-items: baseline; }
+    .row .name { flex: 1; overflow-wrap: anywhere; }
+    .row .n { color: var(--muted); font-size: 12px; }
+    .hit { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .badge { font-size: 11px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+    .badge.movie { color: var(--movie); background: var(--movie-bg); }
+    .badge.show { color: var(--show); background: var(--show-bg); }
+    #detail { padding: 16px; min-height: 200px; }
+    #detail h2 { margin: 0 0 2px; font-size: 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .muted { color: var(--muted); }
+    .actions { display: grid; grid-template-columns: max-content 1fr; gap: 8px 12px; align-items: center; margin: 16px 0; }
+    .actions > div { display: flex; gap: 8px; flex-wrap: wrap; }
+    .actions input { flex: 1 1 200px; }
+    h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 20px 0 8px; }
+    .rule { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .rule .what { flex: 1; overflow-wrap: anywhere; }
+    .rule .kind { font-size: 11px; color: var(--muted); text-transform: uppercase; min-width: 56px; }
+    .release { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+    .release-head { display: flex; gap: 8px; align-items: baseline; padding: 8px 10px; background: var(--hover); border-radius: 8px 8px 0 0; }
+    .release-head .name { flex: 1; font-weight: 600; overflow-wrap: anywhere; }
+    .file { display: flex; gap: 8px; align-items: baseline; padding: 4px 10px; border-top: 1px solid var(--line); font-size: 13px; }
+    .file .name { flex: 1; overflow-wrap: anywhere; }
+    .ep { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; min-width: 52px; }
+    .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+    form.fix { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; border-top: 1px solid var(--line); background: var(--sel); }
+    form.fix input[name=title] { flex: 1 1 200px; }
+    form.fix input[name=season] { width: 110px; }
+    form.fix .hint { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+    #rules-view { max-width: 980px; }
+    #rules-view .panel { padding: 16px; margin-bottom: 16px; }
+    #rules-view p { margin: 0 0 8px; }
+    .add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px; background: var(--ok-bg); color: var(--ok-text); display: none; max-width: calc(100% - 32px); z-index: 3; }
+    #toast.err { background: var(--err-bg); color: var(--err); border: 1px solid var(--err); }
+    .empty { padding: 24px; color: var(--muted); }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      header { flex-wrap: wrap; }
+      main { padding: 16px; }
+      .cols { grid-template-columns: 1fr; }
+      #list { max-height: 45vh; }
+      .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Library</h1>
+  <nav>
+    <a href="#titles" id="tab-titles">Titles</a>
+    <a href="#rules" id="tab-rules">Rules</a>
+  </nav>
+  <span class="spacer"></span>
+  <button id="reparse" title="Parse every file's title again with the current rules (no re-scan)">Re-parse all</button>
+</header>
+
+<main>
+  <section id="titles-view" class="cols">
+    <div class="panel">
+      <div class="list-head">
+        <input type="search" id="search" placeholder="Search titles and file names" autofocus>
+        <select id="type-filter">
+          <option value="">All</option>
+          <option value="movie">Movies</option>
+          <option value="show">Shows</option>
+        </select>
+      </div>
+      <div class="count" id="count"></div>
+      <div id="list"></div>
+    </div>
+    <div class="panel" id="detail"><div class="empty">Pick a title on the left.</div></div>
+  </section>
+
+  <section id="rules-view" hidden>
+    <div class="panel">
+      <p>Rules survive re-scans. For each file, in this order:</p>
+      <ol class="muted">
+        <li><b>Folder / file</b> rules: the one with the longest match wins (a file over its folder).</li>
+        <li><b>Contains</b> rules (the old aliases): if no folder rule set the title, the first one whose text is in the parsed title.</li>
+        <li><b>Title</b> rules: rename, movie/show and merge, followed on (a merged title that was merged again).</li>
+      </ol>
+      <div class="add">
+        <span>Titles containing</span>
+        <input id="contains-match" placeholder="e.g. spider-man">
+        <span>are</span>
+        <input id="contains-title" placeholder="e.g. Spider Man">
+        <button class="primary" id="contains-add">Add</button>
+      </div>
+    </div>
+    <div class="panel" id="rules-list"></div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<datalist id="title-options"></datalist>
+
+<script>
+  const state = { titles: [], files: [], rules: [], byTitle: new Map(), selected: null, busy: false };
+  const $ = (id) => document.getElementById(id);
+
+  /** element helper: h('div', {class: 'x', onclick}, 'text', child) */
+  function h(tag, attrs, ...children) {
+    const el = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs || {})) {
+      if (value === undefined || value === null || value === false) continue;
+      if (key.startsWith('on')) el.addEventListener(key.slice(2), value);
+      else if (key === 'class') el.className = value;
+      else el.setAttribute(key, value === true ? '' : value);
+    }
+    for (const child of children.flat(Infinity)) {
+      if (child === undefined || child === null || child === false) continue;
+      el.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return el;
+  }
+
+  /** replaces an element's children, same child rules as h() */
+  const fill = (el, ...children) => el.replaceChildren(...h('div', {}, ...children).childNodes);
+
+  const norm = (s) => (s || '').toLowerCase().replace(/[._\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const same = (a, b) => (a || '').toLowerCase() === (b || '').toLowerCase();
+  const other = (type) => (type === 'movie' ? 'show' : 'movie');
+  const badge = (type) => h('span', { class: 'badge ' + type }, type);
+  const releaseOf = (path) => (path.includes('/') ? path.slice(0, path.indexOf('/')) : path);
+  const fileName = (path) => path.slice(path.lastIndexOf('/') + 1);
+  const isSample = (path) => /\bsample\b/i.test(fileName(path));
+  const matchesPath = (rule, path) => path === rule.match || path.startsWith(rule.match + '/');
+  const epLabel = (f) => (f.season ? 'S' + String(f.season).padStart(2, '0') : '') + (f.episode ? 'E' + String(f.episode).padStart(2, '0') : '');
+
+  function toast(text, isError) {
+    const el = $('toast');
+    el.textContent = text;
+    el.className = isError ? 'err' : '';
+    el.style.display = 'block';
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => (el.style.display = 'none'), isError ? 6000 : 3000);
+  }
+
+  async function api(method, url, body) {
+    const res = await fetch(url, {
+      method,
+      headers: body ? { 'content-type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || res.status + ' ' + res.statusText);
+    // errors come back as 200 + notification (for Kodi)
+    if (data.notification) throw new Error(data.notification);
+    return data;
+  }
+
+  /** saves/deletes, then reloads and selects the title `select.fileId` is in now; true if it worked */
+  async function mutate(method, url, body, select) {
+    if (state.busy) return false;
+    setBusy(true);
+    try {
+      const result = await api(method, url, body);
+      const changed = result.changed ?? 0;
+      toast((method === 'DELETE' ? 'Rule removed' : url.endsWith('reparse') ? 'Re-parsed' : 'Rule saved') +
+        ' · ' + changed + (changed === 1 ? ' file' : ' files') + ' changed');
+      await load(select);
+      return true;
+    } catch (e) {
+      toast(e.message, true);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function setBusy(busy) {
+    state.busy = busy;
+    document.querySelectorAll('button').forEach((b) => (b.disabled = busy));
+    document.body.style.cursor = busy ? 'progress' : '';
+  }
+
+  async function load(select) {
+    const data = await api('GET', '/library/data');
+    state.titles = data.titles.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true }) || a.type.localeCompare(b.type));
+    state.files = data.files;
+    state.rules = data.rules;
+    state.byTitle = new Map();
+    for (const f of state.files) {
+      if (!state.byTitle.has(f.titleId)) state.byTitle.set(f.titleId, []);
+      state.byTitle.get(f.titleId).push(f);
+    }
+    if (select) {
+      state.selected = state.files.find((f) => f.id === select.fileId)?.titleId ?? null;
+    } else if (!state.titles.some((t) => t.id === state.selected)) {
+      state.selected = null;
+    }
+    $('title-options').replaceChildren(...state.titles.map((t) => h('option', { value: optionValue(t) })));
+    $('tab-rules').textContent = 'Rules (' + state.rules.length + ')';
+    render();
+  }
+
+  const optionValue = (t) => t.title + ' · ' + t.type + ' · #' + t.id;
+
+  function render() {
+    const rules = location.hash === '#rules';
+    $('titles-view').hidden = rules;
+    $('rules-view').hidden = !rules;
+    $('tab-titles').className = rules ? '' : 'on';
+    $('tab-rules').className = rules ? 'on' : '';
+    if (rules) renderRules();
+    else { renderList(); renderDetail(); }
+  }
+
+  // ---- titles list ----
+
+  function renderList() {
+    const words = norm($('search').value).split(' ').filter(Boolean);
+    const type = $('type-filter').value;
+    const has = (text) => { const t = norm(text); return words.every((w) => t.includes(w)); };
+    const rows = [];
+    for (const t of state.titles) {
+      if (type && t.type !== type) continue;
+      const files = state.byTitle.get(t.id) || [];
+      let hit = null;
+      if (words.length && !has(t.title)) {
+        const file = files.find((f) => has(f.path));
+        if (!file) continue;
+        hit = file.path;
+      }
+      rows.push({ t, files, hit });
+    }
+    // title matches before file name matches
+    rows.sort((a, b) => (a.hit ? 1 : 0) - (b.hit ? 1 : 0));
+    $('count').textContent = rows.length + ' of ' + state.titles.length + ' titles';
+    $('list').replaceChildren(...rows.map(({ t, files, hit }) => h('div', {
+      class: 'row' + (t.id === state.selected ? ' sel' : ''),
+      onclick: () => { state.selected = t.id; renderList(); renderDetail(); },
+    },
+      h('div', { class: 'top' }, h('span', { class: 'name' }, t.title), badge(t.type), h('span', { class: 'n' }, files.length)),
+      hit && h('div', { class: 'hit' }, hit),
+    )));
+  }
+
+  // ---- title detail ----
+
+  function rulesFor(t, files) {
+    return state.rules.filter((r) => {
+      if (r.kind === 'path') return files.some((f) => matchesPath(r, f.path));
+      const type = r.type || r.matchType;
+      return same(r.title || r.match, t.title) && (!type || type === t.type);
+    });
+  }
+
+  function renderDetail() {
+    const t = state.titles.find((x) => x.id === state.selected);
+    if (!t) { $('detail').replaceChildren(h('div', { class: 'empty' }, 'Pick a title on the left.')); return; }
+    const files = state.byTitle.get(t.id) || [];
+    const releases = new Map();
+    for (const f of files) {
+      const key = releaseOf(f.path);
+      if (!releases.has(key)) releases.set(key, []);
+      releases.get(key).push(f);
+    }
+
+    const renameInput = h('input', { value: t.title, 'aria-label': 'New name' });
+    const mergeInput = h('input', { list: 'title-options', placeholder: 'Search a title…', 'aria-label': 'Merge into' });
+    const titleRule = (extra) => ({ kind: 'title', match: t.title, matchType: t.type, ...extra });
+    const anchor = { fileId: files[0]?.id };
+
+    const rename = () => {
+      const name = renameInput.value.trim();
+      if (!name || name === t.title) return;
+      mutate('POST', '/library/rules', titleRule({ title: name }), anchor);
+    };
+    const merge = () => {
+      const typed = mergeInput.value.trim();
+      const partial = state.titles.filter((x) => x.id !== t.id && norm(x.title).includes(norm(typed)));
+      const target = state.titles.find((x) => optionValue(x) === typed)
+        || state.titles.find((x) => same(x.title, typed))
+        || (typed && partial.length === 1 ? partial[0] : null);
+      if (!target) return toast(partial.length > 1 ? partial.length + ' titles match, pick one from the list' : 'No such title', true);
+      if (target.id === t.id) return toast('That is this title', true);
+      mutate('POST', '/library/rules', titleRule({ title: target.title, type: target.type }), anchor);
+    };
+    renameInput.addEventListener('keydown', (e) => e.key === 'Enter' && rename());
+    mergeInput.addEventListener('keydown', (e) => e.key === 'Enter' && merge());
+
+    const seasons = new Set(files.map((f) => f.season).filter(Boolean));
+    const myRules = rulesFor(t, files);
+
+    fill($('detail'),
+      h('h2', {}, t.title, badge(t.type)),
+      h('div', { class: 'muted' }, '#' + t.id + ' · ' + files.length + (files.length === 1 ? ' file' : ' files') +
+        ' · ' + releases.size + (releases.size === 1 ? ' release' : ' releases') +
+        (t.type === 'show' ? ' · ' + seasons.size + (seasons.size === 1 ? ' season' : ' seasons') : '')),
+      h('div', { class: 'actions' },
+        h('label', {}, 'Rename'), h('div', {}, renameInput, h('button', { onclick: rename }, 'Rename')),
+        h('label', {}, 'Type'), h('div', {}, h('button', {
+          onclick: () => mutate('POST', '/library/rules', titleRule({ type: other(t.type) }), anchor),
+        }, 'Make it a ' + other(t.type))),
+        h('label', {}, 'Merge into'), h('div', {}, mergeInput, h('button', { onclick: merge }, 'Merge')),
+      ),
+      myRules.length > 0 && h('h3', {}, 'Rules for this title'),
+      myRules.map((r) => ruleRow(r, anchor)),
+      h('h3', {}, 'Files by release'),
+      [...releases].map(([release, releaseFiles]) => releaseBox(t, release, releaseFiles)),
+    );
+  }
+
+  function releaseBox(t, release, files) {
+    const box = h('div', { class: 'release' });
+    const loose = files.length === 1 && files[0].path === release;
+    const openFix = (match, label, fileId) => {
+      box.querySelector('form.fix')?.remove();
+      box.querySelector('.release-head').after(fixForm(t, match, label, fileId, () => box.querySelector('form.fix')?.remove()));
+      box.querySelector('form.fix input[name=title]').focus();
+    };
+    box.append(h('div', { class: 'release-head' },
+      loose && epLabel(files[0]) && h('span', { class: 'ep' }, epLabel(files[0])),
+      h('span', { class: 'name' }, release),
+      !loose && h('span', { class: 'muted' }, files.length),
+      h('button', { onclick: () => openFix(release, loose ? 'this file' : 'every file in this folder', files[0].id) }, 'Fix…'),
+    ));
+    if (!loose) {
+      files.sort((a, b) => (a.season || 0) - (b.season || 0) || (a.episode || 0) - (b.episode || 0) || a.path.localeCompare(b.path, undefined, { numeric: true }));
+      for (const f of files) {
+        box.append(h('div', { class: 'file' },
+          h('span', { class: 'ep' }, epLabel(f)),
+          h('span', { class: 'name' }, f.path.slice(release.length + 1)),
+          isSample(f.path) && h('span', { class: 'tag' }, 'sample'),
+          h('button', { class: 'link', onclick: () => openFix(f.path, 'only this file', f.id) }, 'Fix…'),
+        ));
+      }
+    }
+    return box;
+  }
+
+  function fixForm(t, match, label, fileId, close) {
+    const existing = state.rules.find((r) => r.kind === 'path' && r.match === match);
+    const form = h('form', { class: 'fix' },
+      h('input', { name: 'title', value: existing?.title || t.title, 'aria-label': 'Title', required: true }),
+      h('select', { name: 'type', 'aria-label': 'Type' },
+        ['movie', 'show'].map((type) => h('option', { value: type, selected: (existing?.type || t.type) === type }, type))),
+      h('input', { name: 'season', type: 'number', min: 1, placeholder: 'season', value: existing?.season, 'aria-label': 'Season' }),
+      h('button', { class: 'primary', type: 'submit' }, 'Save rule'),
+      h('button', { type: 'button', onclick: close }, 'Cancel'),
+      h('div', { class: 'hint' }, 'For ' + label + '. Season: leave empty to take it from the file names.'),
+    );
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const field = (name) => form.querySelector('[name=' + name + ']').value;
+      const body = { kind: 'path', match, title: field('title'), type: field('type'), season: field('season') };
+      mutate('POST', '/library/rules', body, { fileId });
+    });
+    return form;
+  }
+
+  // ---- rules ----
+
+  function describe(r) {
+    const target = (title, type) => [title && '“' + title + '”', type].filter(Boolean).join(' ');
+    if (r.kind === 'path') {
+      return [h('b', {}, r.match), ' → ', target(r.title, r.type) + (r.season ? ', season ' + r.season : '')];
+    }
+    if (r.kind === 'contains') return ['titles containing ', h('b', {}, '“' + r.match + '”'), ' → ', target(r.title)];
+    return [h('b', {}, target(r.match, r.matchType)), ' → ', target(r.title !== r.match ? r.title : '', r.type !== r.matchType ? r.type : '')];
+  }
+
+  const kindLabel = { path: 'folder', title: 'title', contains: 'contains' };
+
+  function ruleRow(r, select) {
+    return h('div', { class: 'rule' },
+      h('span', { class: 'kind' }, kindLabel[r.kind]),
+      h('span', { class: 'what' }, describe(r)),
+      h('span', { class: 'muted' }, new Date(r.createdAt).toLocaleDateString()),
+      h('button', { onclick: () => mutate('DELETE', '/library/rules/' + encodeURIComponent(r.id), null, select) }, 'Remove'),
+    );
+  }
+
+  function renderRules() {
+    const groups = [['path', 'Folder / file rules'], ['contains', 'Contains rules'], ['title', 'Title rules']];
+    const content = groups.map(([kind, label]) => {
+      const rules = state.rules.filter((r) => r.kind === kind);
+      return rules.length ? [h('h3', {}, label + ' (' + rules.length + ')'), rules.map((r) => ruleRow(r))] : [];
+    }).flat();
+    fill($('rules-list'), content.length ? content : h('div', { class: 'empty' }, 'No rules yet.'));
+  }
+
+  // ---- events ----
+
+  $('search').addEventListener('input', renderList);
+  $('type-filter').addEventListener('change', renderList);
+  window.addEventListener('hashchange', render);
+  $('reparse').addEventListener('click', () => mutate('POST', '/library/reparse', null, null));
+  $('contains-add').addEventListener('click', () => {
+    const match = $('contains-match').value, title = $('contains-title').value;
+    mutate('POST', '/library/rules', { kind: 'contains', match, title }, null)
+      .then((ok) => { if (ok) { $('contains-match').value = ''; $('contains-title').value = ''; } });
+  });
+
+  load().catch((e) => toast(e.message, true));
+</script>
+</body>
+</html>

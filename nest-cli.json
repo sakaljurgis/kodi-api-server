@@ -10,7 +10,7 @@
         "watchAssets": true
       },
       {
-        "include": "AliasesModule/View/",
+        "include": "Library/View/",
         "outDir": "dist/src",
         "watchAssets": true
       }
