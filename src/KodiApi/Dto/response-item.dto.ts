@@ -1,5 +1,6 @@
 import ContextMenu from './context-menu.dto';
 import { WatchStateEntity } from '../../Shared/Entity/watch-state.entity';
+import { Art } from '../../Artwork/artwork-index';
 
 export default class ResponseItem {
   isFolder = false;
@@ -12,7 +13,10 @@ export default class ResponseItem {
   size: number;
   plot: string;
   duration: number;
+  /** poster (full url) */
   thumb: string;
+  /** backdrop (full url) */
+  fanart: string;
   contextMenus: Array<ContextMenu>;
   date: string;
   searchFor: string;
@@ -101,6 +105,18 @@ export default class ResponseItem {
 
   setThumb(thumb: string) {
     this.thumb = thumb;
+
+    return this;
+  }
+
+  /** poster and backdrop, those there are */
+  setArt(art: Art) {
+    if (art.thumb) {
+      this.thumb = art.thumb;
+    }
+    if (art.fanart) {
+      this.fanart = art.fanart;
+    }
 
     return this;
   }

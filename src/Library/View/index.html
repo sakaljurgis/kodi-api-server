@@ -80,6 +80,15 @@
     #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px; background: var(--ok-bg); color: var(--ok-text); display: none; max-width: calc(100% - 32px); z-index: 3; }
     #toast.err { background: var(--err-bg); color: var(--err); border: 1px solid var(--err); }
     .empty { padding: 24px; color: var(--muted); }
+    .art { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    .art .poster { width: 46px; height: 69px; object-fit: cover; border-radius: 4px; background: var(--hover); flex: none; }
+    .art .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .art .what a { color: var(--accent); }
+    .art form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .art form input { flex: 1 1 220px; }
+    .art form .hint { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+    .row .thumb { width: 23px; height: 34px; object-fit: cover; border-radius: 2px; background: var(--hover); flex: none; align-self: center; }
+    footer { padding: 0 16px 16px; color: var(--muted); font-size: 12px; }
     [hidden] { display: none !important; }
     @media (max-width: 760px) {
       header { flex-wrap: wrap; }
@@ -98,6 +107,7 @@
     <a href="#rules" id="tab-rules">Rules</a>
   </nav>
   <span class="spacer"></span>
+  <button id="refetch-art" title="Search TMDB again for every match not picked by hand">Refresh artwork</button>
   <button id="reparse" title="Parse every file's title again with the current rules (no re-scan)">Re-parse all</button>
 </header>
 
@@ -111,6 +121,7 @@
           <option value="movie">Movies</option>
           <option value="show">Shows</option>
           <option value="hidden">With hidden files</option>
+          <option value="noart">Without artwork</option>
         </select>
       </div>
       <div class="count" id="count"></div>
@@ -138,12 +149,13 @@
     <div class="panel" id="rules-list"></div>
   </section>
 </main>
+<footer>Posters and backdrops from <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.</footer>
 <div id="toast"></div>
 
 <datalist id="title-options"></datalist>
 
 <script>
-  const state = { titles: [], files: [], rules: [], byTitle: new Map(), selected: null, busy: false };
+  const state = { titles: [], files: [], rules: [], artwork: {}, byTitle: new Map(), selected: null, busy: false };
   const $ = (id) => document.getElementById(id);
 
   /** element helper: h('div', {class: 'x', onclick}, 'text', child) */
@@ -227,6 +239,7 @@
     state.titles = data.titles.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true }) || a.type.localeCompare(b.type));
     state.files = data.files;
     state.rules = data.rules;
+    state.artwork = data.artwork || {};
     state.byTitle = new Map();
     for (const f of state.files) {
       if (!state.byTitle.has(f.titleId)) state.byTitle.set(f.titleId, []);
@@ -263,7 +276,9 @@
     const rows = [];
     for (const t of state.titles) {
       const files = state.byTitle.get(t.id) || [];
-      if (type === 'hidden' ? !files.some((f) => f.hidden) : type && t.type !== type) continue;
+      if (type === 'hidden' ? !files.some((f) => f.hidden)
+        : type === 'noart' ? !t.artwork.some((key) => !state.artwork[key]?.tmdbId)
+        : type && t.type !== type) continue;
       let hit = null;
       if (words.length && !has(t.title)) {
         const file = files.find((f) => has(f.path));
@@ -279,9 +294,15 @@
       class: 'row' + (t.id === state.selected ? ' sel' : ''),
       onclick: () => { state.selected = t.id; renderList(); renderDetail(); },
     },
-      h('div', { class: 'top' }, h('span', { class: 'name' }, t.title), badge(t.type), hiddenTag(files), h('span', { class: 'n' }, files.length)),
+      h('div', { class: 'top' }, thumb(t), h('span', { class: 'name' }, t.title), badge(t.type), hiddenTag(files), h('span', { class: 'n' }, files.length)),
       hit && h('div', { class: 'hit' }, hit),
     )));
+  }
+
+  /** the title's poster, small */
+  function thumb(t) {
+    const poster = state.artwork[t.artwork[0]]?.poster;
+    return poster ? h('img', { class: 'thumb', src: poster, alt: '', loading: 'lazy' }) : h('span', { class: 'thumb' });
   }
 
   /** "hidden" if all files are, "3 hidden" if some */
@@ -354,6 +375,8 @@
         }, 'Make it a ' + other(t.type))),
         h('label', {}, 'Merge into'), h('div', {}, mergeInput, h('button', { onclick: merge }, 'Merge')),
       ),
+      t.artwork.length > 0 && h('h3', {}, t.artwork.length > 1 ? 'Artwork (the first one is the title\'s)' : 'Artwork'),
+      t.artwork.map((key) => artworkBox(t, key, files)),
       myRules.length > 0 && h('h3', {}, 'Rules for this title'),
       myRules.map((r) => ruleRow(r, anchor)),
       h('h3', {}, 'Files by release'),
@@ -395,6 +418,71 @@
       }
     }
     return box;
+  }
+
+  /** a match on TMDB: a movie title's film (one per year) or a show */
+  function artworkBox(t, key, files) {
+    const a = state.artwork[key];
+    const films = files.filter((f) => f.artwork === key);
+    const box = h('div', { class: 'art' });
+    if (!a) {
+      fill(box, h('span', { class: 'poster' }), h('div', { class: 'what muted' }, 'Not looked up yet', films[0] && h('div', { class: 'hit' }, fileName(films[0].path))));
+      return box;
+    }
+    const search = 'https://www.themoviedb.org/search/' + (a.type === 'movie' ? 'movie' : 'tv') + '?query=' + encodeURIComponent(a.query);
+    const openChange = () => {
+      box.querySelector('form')?.remove();
+      const input = h('input', { name: 'tmdb', placeholder: 'TMDB id or link', 'aria-label': 'TMDB id or link', required: true });
+      const form = h('form', {},
+        input,
+        h('button', { class: 'primary', type: 'submit' }, 'Save'),
+        h('button', { type: 'button', onclick: () => artworkAction('/library/artwork/' + a.id, { tmdb: null }, 'No artwork for it') }, 'No artwork'),
+        h('button', { type: 'button', onclick: () => form.remove() }, 'Cancel'),
+        h('div', { class: 'hint' }, 'Find it on ', h('a', { href: search, target: '_blank', rel: 'noopener' }, 'TMDB'), ', paste the link (or the number in it).'),
+      );
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        artworkAction('/library/artwork/' + a.id, { tmdb: input.value }, 'Artwork saved');
+      });
+      box.querySelector('.what').append(form);
+      input.focus();
+    };
+    fill(box,
+      a.poster ? h('img', { class: 'poster', src: a.poster, alt: '' }) : h('span', { class: 'poster' }),
+      h('div', { class: 'what' },
+        h('div', {},
+          a.tmdbId
+            ? h('a', { href: a.link, target: '_blank', rel: 'noopener' }, a.tmdbTitle + (a.tmdbYear ? ' (' + a.tmdbYear + ')' : ''))
+            : h('span', {}, a.manual ? 'No artwork' : 'Nothing found on TMDB'),
+          ' ', a.manual && h('span', { class: 'tag' }, 'picked by hand'),
+        ),
+        h('div', { class: 'hit' }, 'Searched for “' + a.query + '”' + (a.year ? ' · ' + a.year : '') +
+          (t.type === 'movie' && films.length ? ' · ' + (films.length === 1 ? fileName(films[0].path) : films.length + ' files') : '')),
+      ),
+      h('button', { onclick: openChange }, 'Change…'),
+      (a.manual || !a.tmdbId) && h('button', {
+        title: a.manual ? 'Forget the hand-picked match, search TMDB again' : 'Search TMDB again',
+        onclick: () => artworkAction('/library/artwork/' + a.id + '/auto', null, 'Searched again'),
+      }, a.manual ? 'Automatic' : 'Search again'),
+    );
+    return box;
+  }
+
+  /** an artwork change, then reload (keeps the selected title) */
+  async function artworkAction(url, body, done) {
+    if (state.busy) return false;
+    setBusy(true);
+    try {
+      await api('POST', url, body);
+      toast(done);
+      await load();
+      return true;
+    } catch (e) {
+      toast(e.message, true);
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
 
   function fixForm(t, match, label, fileId, close) {
@@ -454,6 +542,10 @@
   $('type-filter').addEventListener('change', renderList);
   window.addEventListener('hashchange', render);
   $('reparse').addEventListener('click', () => mutate('POST', '/library/reparse', null, null));
+  $('refetch-art').addEventListener('click', () => {
+    toast('Searching TMDB again, takes a minute or two…');
+    artworkAction('/library/artwork/refetch', null, 'Artwork searched again');
+  });
   $('contains-add').addEventListener('click', () => {
     const match = $('contains-match').value, title = $('contains-title').value;
     mutate('POST', '/library/rules', { kind: 'contains', match, title }, null)

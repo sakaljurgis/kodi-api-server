@@ -9,6 +9,7 @@ import {
   LibraryController,
 } from './library.controller';
 import { LibraryService } from './library.service';
+import { ArtworkModule } from '../Artwork/artwork.module';
 
 /** /library: fix titles (rename, movie/show, merge, per folder) with title rules */
 @Module({
@@ -16,6 +17,7 @@ import { LibraryService } from './library.service';
     TypeOrmModule.forFeature([FileEntity, TitleEntity]),
     TitleRulesModule,
     VideoFilesModule,
+    ArtworkModule,
   ],
   controllers: [LibraryController, AliasesRedirectController],
   providers: [LibraryService],

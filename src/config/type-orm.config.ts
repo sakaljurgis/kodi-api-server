@@ -5,6 +5,7 @@ import { TitleEntity } from '../Shared/Entity/title.entity';
 import { FileEntity } from '../Shared/Entity/file.entity';
 import { TorrentEntity } from '../Shared/Entity/torrent.entity';
 import { WatchStateEntity } from '../Shared/Entity/watch-state.entity';
+import { ArtworkEntity } from '../Shared/Entity/artwork.entity';
 import { join } from 'path';
 
 export class TypeOrmConfig {
@@ -20,6 +21,7 @@ export class TypeOrmConfig {
       FileEntity,
       TorrentEntity,
       WatchStateEntity,
+      ArtworkEntity,
     ];
   }
   type: 'sqlite';

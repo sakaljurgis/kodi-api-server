@@ -5,6 +5,7 @@ import {
   Get,
   Header,
   Param,
+  ParseIntPipe,
   Post,
   Redirect,
   Res,
@@ -49,6 +50,27 @@ export class LibraryController {
   @Post('reparse')
   reparse() {
     return this.libraryService.reparse();
+  }
+
+  /** every automatic match searched again; answers when done */
+  @Post('artwork/refetch')
+  refetchArtwork() {
+    return this.libraryService.refetchArtwork();
+  }
+
+  /** picks the match by hand: `{tmdb: <id or link>}`, `{tmdb: null}` for none */
+  @Post('artwork/:id')
+  setArtwork(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { tmdb: unknown },
+  ) {
+    return this.libraryService.setArtwork(id, body?.tmdb ?? null);
+  }
+
+  /** back to the automatic match */
+  @Post('artwork/:id/auto')
+  resetArtwork(@Param('id', ParseIntPipe) id: number) {
+    return this.libraryService.resetArtwork(id);
   }
 }
 

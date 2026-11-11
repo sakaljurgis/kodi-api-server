@@ -8,6 +8,7 @@ import { configService } from '../../config/config.service';
 import { VideoFilesConfig } from '../../config/video-files.config';
 import { FileEntityTitleInfoExpander } from './Expander/file-entity-title-info.expander';
 import { getReleaseFolder, isSample } from '../../Shared/Util/file-order';
+import { ArtworkService } from '../../Artwork/artwork.service';
 
 @Injectable()
 export class VideoFilesUpdateService {
@@ -19,6 +20,7 @@ export class VideoFilesUpdateService {
     private readonly repository: VideoFilesUpdateRepository,
     private readonly expander: FileEntityExpander,
     private readonly titleInfoExpander: FileEntityTitleInfoExpander,
+    private readonly artworkService: ArtworkService,
   ) {}
 
   /** scans and title re-parses run one at a time */
@@ -82,6 +84,7 @@ export class VideoFilesUpdateService {
 
     await this.attachSamplesToReleases(entitiesToSave);
     await this.repository.saveFiles(entitiesToSave);
+    this.artworkService.fetchMissing();
     console.log(
       `file scan and update complete - ${refresh ? 'full update' : 'only new'}`,
     );
@@ -121,6 +124,7 @@ export class VideoFilesUpdateService {
 
     await this.attachSamplesToReleases(fileEntitiesToUpdate);
     await this.repository.saveFiles(fileEntitiesToUpdate);
+    this.artworkService.fetchMissing();
   }
 
   public async buildAndSaveEntitiesFromPartial(
@@ -141,6 +145,7 @@ export class VideoFilesUpdateService {
 
     await this.attachSamplesToReleases(entitiesToSave);
     await this.repository.saveFiles(entitiesToSave);
+    this.artworkService.fetchMissing();
 
     return this.repository.findFilesByPaths(
       entitiesToSave.map((fileEntity) => {
@@ -187,6 +192,7 @@ export class VideoFilesUpdateService {
               fileEntity.info + fileEntity.infos,
         ),
       );
+      this.artworkService.fetchMissing();
 
       return changed.size;
     });

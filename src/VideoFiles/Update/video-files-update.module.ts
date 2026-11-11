@@ -16,6 +16,7 @@ import { FileEntityDurationExpander } from './Expander/file-entity-duration.expa
 import { FileEntityTransmissionExpander } from './Expander/file-entity-transmission.expander';
 import { TorrentSeedClientModule } from '../../Torrent/SeedClient/torrent-seed-client.module';
 import { TitleRulesModule } from '../TitleRules/title-rules.module';
+import { ArtworkModule } from '../../Artwork/artwork.module';
 
 const fileEntityExpanders: Provider<any>[] = [
   FileEntityExpander,
@@ -43,6 +44,7 @@ const fileEntityExpanders: Provider<any>[] = [
     TypeOrmModule.forFeature([TitleEntity, FileEntity]),
     TorrentSeedClientModule,
     TitleRulesModule,
+    ArtworkModule,
   ],
   controllers: [],
   providers: [
