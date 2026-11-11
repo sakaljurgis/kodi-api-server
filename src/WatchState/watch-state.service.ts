@@ -19,6 +19,11 @@ const WATCHED_RATIO = 0.9;
 const MIN_POSITION = 10;
 /** Continue watching only goes this far back, older activity doesn't crowd it */
 const CONTINUE_WATCHING_MONTHS = 3;
+/**
+ * Episodes played in order, each within this of the one before, are one run
+ * (watching or rewatching a show); a longer gap starts a new one.
+ */
+const RUN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type WatchStates = Map<number, WatchStateEntity>;
 
@@ -150,8 +155,9 @@ export class WatchStateService {
 
   /**
    * What to watch next, one file per title, latest activity first: the title's
-   * last played file while it's unfinished, or for shows the next unwatched
-   * episode after it. Only titles played in the last CONTINUE_WATCHING_MONTHS;
+   * last played file while it's unfinished or has a resume point (a rewatch
+   * stopped halfway), or for shows the next episode after it that wasn't played
+   * in this run (see findNextEpisode). Only titles played in the last CONTINUE_WATCHING_MONTHS;
    * finished movies and shows are left out, and so are files hidden from
    * Continue watching.
    * Files come with their title (and its live files) and torrent.
@@ -202,7 +208,8 @@ export class WatchStateService {
       }
 
       let next: FileEntity | null = last;
-      if (states.get(last.id).watched) {
+      const lastState = states.get(last.id);
+      if (lastState.watched && !(lastState.position > 0)) {
         next =
           last.title.type === TitleTypeEnum.show
             ? this.findNextEpisode(titleFiles, last, states)
@@ -221,7 +228,17 @@ export class WatchStateService {
       .slice(0, limit);
   }
 
-  /** the first unwatched episode after [after]; [sortedFiles] are the title's files in order */
+  /**
+   * The first episode after [after] (just finished) that's still to watch.
+   * After a first watch of [after] (play count 1): the next unwatched episode,
+   * also when watching out of order. After a rewatch of it (play count 2+):
+   * the next episode that wasn't played in this run. The run goes back from
+   * [after] over the episodes before it while each was played before the next
+   * one and within RUN_GAP_MS of it. So a rewatch goes on to the next episode
+   * (last played before the rewatch started), and replaying an episode of this
+   * week's run doesn't go back over the ones played after it.
+   * [sortedFiles] are the title's files in order.
+   */
   private findNextEpisode(
     sortedFiles: FileEntity[],
     after: FileEntity,
@@ -249,9 +266,41 @@ export class WatchStateService {
       return null;
     }
 
+    // an episode's releases count as one: when any of them was last played
+    const played = (key: string) =>
+      Math.max(
+        0,
+        ...episodes
+          .get(key)
+          .map((fileEntity) => states.get(fileEntity.id)?.lastPlayed ?? 0),
+      );
+    let start = index;
+    while (start > 0) {
+      const previous = played(keys[start - 1]);
+      const current = played(keys[start]);
+      if (!previous || previous > current || current - previous > RUN_GAP_MS) {
+        break;
+      }
+      start--;
+    }
+    const runStart = played(keys[start]);
+    const isRewatch = (states.get(after.id)?.playCount ?? 0) > 1;
+
     for (const key of keys.slice(index + 1)) {
       const releases = episodes.get(key);
-      if (releases.some((fileEntity) => states.get(fileEntity.id)?.watched)) {
+      // first watch: any watched release; rewatch: played in this run,
+      // watched, and not stopped halfway again (no resume point)
+      const watched = releases.some(
+        (fileEntity) => states.get(fileEntity.id)?.watched,
+      );
+      const done = isRewatch
+        ? played(key) >= runStart &&
+          watched &&
+          !releases.some(
+            (fileEntity) => states.get(fileEntity.id)?.position > 0,
+          )
+        : watched;
+      if (done) {
         continue;
       }
       // the release that was started, else the one watched so far, else the biggest
