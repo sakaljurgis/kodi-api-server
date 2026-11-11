@@ -88,6 +88,24 @@ export class AllFilesController {
     );
   }
 
+  @Get('hide-file/:fileId')
+  hideFromLibrary(@Param('fileId') fileId: string): Promise<KodiApiResponse> {
+    return this.allFilesService.hideFromLibrary(fileId);
+  }
+
+  @Get('hide-version/:titleId/:seasonId/:versionId')
+  hideVersionFromLibrary(
+    @Param('titleId') titleId: string,
+    @Param('seasonId') seasonId: string,
+    @Param('versionId') versionId: string,
+  ): Promise<KodiApiResponse> {
+    return this.allFilesService.hideVersionFromLibrary(
+      parseInt(titleId),
+      parseInt(seasonId),
+      parseInt(versionId),
+    );
+  }
+
   @Get('hide/:fileId')
   hideFromContinueWatching(
     @Param('fileId') fileId: string,

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { FileEntity } from '../Shared/Entity/file.entity';
@@ -20,7 +20,7 @@ export class LibraryService {
     private readonly videoFilesFacade: VideoFilesFacade,
   ) {}
 
-  /** titles that have files (not deleted) */
+  /** titles that have files (not deleted), hidden ones too */
   async getData() {
     const files = await this.fileRepository.find({
       select: {
@@ -29,6 +29,7 @@ export class LibraryService {
         relativePath: true,
         season: true,
         info: true,
+        hidden: true,
       },
       where: { deleted: false, relativePath: Not(IsNull()) },
     });
@@ -47,6 +48,7 @@ export class LibraryService {
         path: file.relativePath,
         season: file.season,
         episode: getEpisode(file),
+        hidden: file.hidden,
       })),
       rules: await this.titleRulesService.getRules(),
     };
@@ -60,6 +62,19 @@ export class LibraryService {
   async deleteRule(id: string) {
     const rules = await this.titleRulesService.deleteRule(id);
     return { rules, changed: await this.videoFilesFacade.reparseTitles() };
+  }
+
+  /** hides files from the lists or shows them again (a folder: all its files) */
+  async setHidden(fileIds: unknown, hidden: unknown) {
+    if (
+      !Array.isArray(fileIds) ||
+      !fileIds.every((id) => Number.isInteger(id)) ||
+      typeof hidden !== 'boolean'
+    ) {
+      throw new BadRequestException('fileIds (numbers) and hidden (boolean)');
+    }
+
+    return { changed: await this.videoFilesFacade.setHidden(fileIds, hidden) };
   }
 
   async reparse() {

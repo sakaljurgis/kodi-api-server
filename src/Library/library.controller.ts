@@ -41,6 +41,11 @@ export class LibraryController {
     return this.libraryService.deleteRule(id);
   }
 
+  @Post('hidden')
+  setHidden(@Body() body: { fileIds: number[]; hidden: boolean }) {
+    return this.libraryService.setHidden(body?.fileIds, body?.hidden);
+  }
+
   @Post('reparse')
   reparse() {
     return this.libraryService.reparse();

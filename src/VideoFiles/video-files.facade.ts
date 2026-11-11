@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { TitleEntity } from '../Shared/Entity/title.entity';
 import { TitleTypeEnum } from '../Shared/Enum/title-type.enum';
 import { FileEntity } from '../Shared/Entity/file.entity';
@@ -19,30 +19,46 @@ export class VideoFilesFacade {
     private readonly videoFilesUpdateService: VideoFilesUpdateService,
   ) {}
 
+  /** with their listed files (not deleted, not hidden); titles without any are left out */
   async getListOfTitles(type: TitleTypeEnum): Promise<TitleEntity[]> {
     return this.titleRepository
       .createQueryBuilder()
       .setFindOptions({ relations: { files: true } })
       .where('type = :type', { type: type })
       .andWhere('deleted = :deleted', { deleted: false })
+      .andWhere('hidden = :hidden', { hidden: false })
       .getMany();
   }
 
+  /** with its listed files (not deleted, not hidden); null if it has none */
   async getTitleWithFiles(titleId: number): Promise<TitleEntity | null> {
     return this.titleRepository
       .findOne({
         relations: { files: { torrent: true } },
-        where: { id: titleId, files: { deleted: false } },
+        where: { id: titleId, files: { deleted: false, hidden: false } },
       })
       .catch(() => null);
   }
 
-  /** all files that aren't deleted, with their titles */
+  /** all listed files (not deleted, not hidden), with their titles */
   getLiveFiles(): Promise<FileEntity[]> {
     return this.fileRepository.find({
-      where: { deleted: false },
+      where: { deleted: false, hidden: false },
       relations: { title: true },
     });
+  }
+
+  /** hides files from the lists or shows them again; how many changed */
+  async setHidden(fileIds: number[], hidden: boolean): Promise<number> {
+    if (!fileIds.length) {
+      return 0;
+    }
+    const result = await this.fileRepository.update(
+      { id: In(fileIds), hidden: !hidden },
+      { hidden },
+    );
+
+    return result.affected ?? 0;
   }
 
   async getFile(fileId: number): Promise<FileEntity | null> {

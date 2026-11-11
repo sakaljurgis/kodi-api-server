@@ -68,6 +68,7 @@
     .file .name { flex: 1; overflow-wrap: anywhere; }
     .ep { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; min-width: 52px; }
     .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+    .file.is-hidden .name, .file.is-hidden .ep, .release.is-hidden .release-head .name { opacity: .5; }
     form.fix { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; border-top: 1px solid var(--line); background: var(--sel); }
     form.fix input[name=title] { flex: 1 1 200px; }
     form.fix input[name=season] { width: 110px; }
@@ -109,6 +110,7 @@
           <option value="">All</option>
           <option value="movie">Movies</option>
           <option value="show">Shows</option>
+          <option value="hidden">With hidden files</option>
         </select>
       </div>
       <div class="count" id="count"></div>
@@ -196,14 +198,14 @@
   }
 
   /** saves/deletes, then reloads and selects the title `select.fileId` is in now; true if it worked */
-  async function mutate(method, url, body, select) {
+  async function mutate(method, url, body, select, done) {
     if (state.busy) return false;
     setBusy(true);
     try {
       const result = await api(method, url, body);
       const changed = result.changed ?? 0;
-      toast((method === 'DELETE' ? 'Rule removed' : url.endsWith('reparse') ? 'Re-parsed' : 'Rule saved') +
-        ' · ' + changed + (changed === 1 ? ' file' : ' files') + ' changed');
+      toast((done || (method === 'DELETE' ? 'Rule removed' : url.endsWith('reparse') ? 'Re-parsed' : 'Rule saved')) +
+        ' · ' + changed + (changed === 1 ? ' file' : ' files') + (done ? '' : ' changed'));
       await load(select);
       return true;
     } catch (e) {
@@ -260,8 +262,8 @@
     const has = (text) => { const t = norm(text); return words.every((w) => t.includes(w)); };
     const rows = [];
     for (const t of state.titles) {
-      if (type && t.type !== type) continue;
       const files = state.byTitle.get(t.id) || [];
+      if (type === 'hidden' ? !files.some((f) => f.hidden) : type && t.type !== type) continue;
       let hit = null;
       if (words.length && !has(t.title)) {
         const file = files.find((f) => has(f.path));
@@ -277,10 +279,20 @@
       class: 'row' + (t.id === state.selected ? ' sel' : ''),
       onclick: () => { state.selected = t.id; renderList(); renderDetail(); },
     },
-      h('div', { class: 'top' }, h('span', { class: 'name' }, t.title), badge(t.type), h('span', { class: 'n' }, files.length)),
+      h('div', { class: 'top' }, h('span', { class: 'name' }, t.title), badge(t.type), hiddenTag(files), h('span', { class: 'n' }, files.length)),
       hit && h('div', { class: 'hit' }, hit),
     )));
   }
+
+  /** "hidden" if all files are, "3 hidden" if some */
+  function hiddenTag(files) {
+    const n = files.filter((f) => f.hidden).length;
+    return n > 0 && h('span', { class: 'tag', title: 'Hidden from the lists (Kodi, SKLK TV)' }, n === files.length ? 'hidden' : n + ' hidden');
+  }
+
+  /** hides files from the lists or shows them again */
+  const setHidden = (files, hidden) => mutate('POST', '/library/hidden', { fileIds: files.map((f) => f.id), hidden },
+    { fileId: files[0].id }, hidden ? 'Hidden' : 'Shown again');
 
   // ---- title detail ----
 
@@ -332,6 +344,7 @@
     fill($('detail'),
       h('h2', {}, t.title, badge(t.type)),
       h('div', { class: 'muted' }, '#' + t.id + ' · ' + files.length + (files.length === 1 ? ' file' : ' files') +
+        (files.some((f) => f.hidden) ? ' (' + files.filter((f) => f.hidden).length + ' hidden)' : '') +
         ' · ' + releases.size + (releases.size === 1 ? ' release' : ' releases') +
         (t.type === 'show' ? ' · ' + seasons.size + (seasons.size === 1 ? ' season' : ' seasons') : '')),
       h('div', { class: 'actions' },
@@ -349,8 +362,11 @@
   }
 
   function releaseBox(t, release, files) {
-    const box = h('div', { class: 'release' });
     const loose = files.length === 1 && files[0].path === release;
+    const visible = files.filter((f) => !f.hidden);
+    const hidden = files.filter((f) => f.hidden);
+    const box = h('div', { class: 'release' + (visible.length ? '' : ' is-hidden') });
+    const what = loose ? 'this file' : 'every file of this title in this folder';
     const openFix = (match, label, fileId) => {
       box.querySelector('form.fix')?.remove();
       box.querySelector('.release-head').after(fixForm(t, match, label, fileId, () => box.querySelector('form.fix')?.remove()));
@@ -360,15 +376,20 @@
       loose && epLabel(files[0]) && h('span', { class: 'ep' }, epLabel(files[0])),
       h('span', { class: 'name' }, release),
       !loose && h('span', { class: 'muted' }, files.length),
+      hiddenTag(files),
+      visible.length > 0 && h('button', { title: 'Hide ' + what + ' from the lists (Kodi, SKLK TV); stays on disk and keeps seeding. Files found later stay listed.', onclick: () => setHidden(visible, true) }, 'Hide'),
+      hidden.length > 0 && h('button', { title: 'List ' + what + ' again', onclick: () => setHidden(hidden, false) }, 'Unhide'),
       h('button', { onclick: () => openFix(release, loose ? 'this file' : 'every file in this folder', files[0].id) }, 'Fix…'),
     ));
     if (!loose) {
       files.sort((a, b) => (a.season || 0) - (b.season || 0) || (a.episode || 0) - (b.episode || 0) || a.path.localeCompare(b.path, undefined, { numeric: true }));
       for (const f of files) {
-        box.append(h('div', { class: 'file' },
+        box.append(h('div', { class: 'file' + (f.hidden ? ' is-hidden' : '') },
           h('span', { class: 'ep' }, epLabel(f)),
           h('span', { class: 'name' }, f.path.slice(release.length + 1)),
           isSample(f.path) && h('span', { class: 'tag' }, 'sample'),
+          f.hidden && h('span', { class: 'tag' }, 'hidden'),
+          h('button', { class: 'link', onclick: () => setHidden([f], !f.hidden) }, f.hidden ? 'Unhide' : 'Hide'),
           h('button', { class: 'link', onclick: () => openFix(f.path, 'only this file', f.id) }, 'Fix…'),
         ));
       }

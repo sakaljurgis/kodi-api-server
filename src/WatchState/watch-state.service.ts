@@ -174,6 +174,7 @@ export class WatchStateService {
       .leftJoinAndSelect('file.title', 'title')
       .leftJoinAndSelect('file.torrent', 'torrent')
       .where('file.deleted = :deleted', { deleted: false })
+      .andWhere('file.hidden = :hidden', { hidden: false })
       .andWhere(
         `file.title_id IN (
           SELECT f.title_id FROM files f

@@ -343,6 +343,7 @@ export class AllFilesService {
         )
         .setPath('all/' + path);
       this.addFolderWatchState(item, version.files, states, path);
+      item.addContextMenu('Hide this version', 'all/hide-version/' + path);
     }
 
     for (const fileEntity of others) {
@@ -352,7 +353,7 @@ export class AllFilesService {
     return apiResponse;
   }
 
-  /** a file with the watched/delete/torrent menus */
+  /** a file with the watched/hide/delete/torrent menus */
   private addLibraryFileItem(
     apiResponse: ApiResponse,
     fileEntity: FileEntity,
@@ -361,6 +362,7 @@ export class AllFilesService {
     const state = states.get(fileEntity.id);
     const item = this.addFileItem(apiResponse, fileEntity, state);
     this.addWatchedMenus(item, fileEntity, state);
+    item.addContextMenu('Hide from library', 'all/hide-file/' + fileEntity.id);
     if (fileEntity.torrentId) {
       item.addContextMenu(
         'Show torrent',
@@ -583,6 +585,42 @@ export class AllFilesService {
     );
     return this.koiApiResponseFactory.createNotificationResponse(
       watched ? 'Marked as watched' : 'Marked as unwatched',
+    );
+  }
+
+  /** out of every list (kept on disk, still playable); shown again on /library */
+  async hideFromLibrary(fileId: string): Promise<NotificationResponse> {
+    await this.videoFilesFacade.setHidden([await this.getFileId(fileId)], true);
+    return this.koiApiResponseFactory.createNotificationResponse(
+      'Hidden from the library (undo on /library)',
+    );
+  }
+
+  /** all files of a version of a season, see loadTitle */
+  async hideVersionFromLibrary(
+    titleId: number,
+    seasonId: number,
+    versionId: number,
+  ): Promise<NotificationResponse> {
+    const titleEntity = titleId
+      ? await this.videoFilesFacade.getTitleWithFiles(titleId)
+      : null;
+    const version = titleEntity
+      ? findVersion(
+          splitVersions(getSeasonFiles(titleEntity.files, seasonId)),
+          versionId,
+        )
+      : undefined;
+    if (!version) {
+      throw new NotFoundException(`version #${versionId} not found`);
+    }
+
+    const hidden = await this.videoFilesFacade.setHidden(
+      version.files.map((fileEntity) => fileEntity.id),
+      true,
+    );
+    return this.koiApiResponseFactory.createNotificationResponse(
+      `Hidden ${plural(hidden, 'file')} from the library (undo on /library)`,
     );
   }
 

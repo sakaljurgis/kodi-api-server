@@ -61,6 +61,13 @@ export class FileEntity {
   @Column({ type: 'float' })
   progress: number;
 
+  /**
+   * Hidden from the library's lists by hand (/library or a Kodi menu), e.g. a
+   * release kept only for seeding; scans don't change it. Still playable by id.
+   */
+  @Column()
+  hidden: boolean;
+
   /** when the file was first found (ms epoch); null if before this was kept */
   @Column({ name: 'added_at' })
   addedAt: number | null;
