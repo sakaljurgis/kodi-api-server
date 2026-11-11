@@ -89,6 +89,7 @@ export class VideoFilesUpdateRepository {
     if (fileEntity === null) {
       fileEntity = new FileEntity();
       fileEntity.path = path;
+      fileEntity.addedAt = Date.now();
       if (saveIfCreated) {
         await this.fileRepository.save(fileEntity);
         fileEntity = await this.fileRepository.findOne({

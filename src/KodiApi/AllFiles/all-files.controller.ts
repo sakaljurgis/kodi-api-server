@@ -45,6 +45,11 @@ export class AllFilesController {
     return this.allFilesService.getContinueWatching();
   }
 
+  @Get('recent')
+  getRecentlyAdded(): Promise<ApiResponse> {
+    return this.allFilesService.getRecentlyAdded();
+  }
+
   @Get('watched/:fileId')
   markWatched(@Param('fileId') fileId: string): Promise<KodiApiResponse> {
     return this.allFilesService.setWatched(fileId, true);
@@ -55,26 +60,30 @@ export class AllFilesController {
     return this.allFilesService.setWatched(fileId, false);
   }
 
-  @Get('watched-title/:titleId/:seasonId?')
+  @Get('watched-title/:titleId/:seasonId?/:versionId?')
   markTitleWatched(
     @Param('titleId') titleId: string,
     @Param('seasonId') seasonId: string,
+    @Param('versionId') versionId: string,
   ): Promise<KodiApiResponse> {
     return this.allFilesService.setTitleWatched(
       parseInt(titleId),
       parseInt(seasonId),
+      parseInt(versionId),
       true,
     );
   }
 
-  @Get('unwatched-title/:titleId/:seasonId?')
+  @Get('unwatched-title/:titleId/:seasonId?/:versionId?')
   markTitleUnwatched(
     @Param('titleId') titleId: string,
     @Param('seasonId') seasonId: string,
+    @Param('versionId') versionId: string,
   ): Promise<KodiApiResponse> {
     return this.allFilesService.setTitleWatched(
       parseInt(titleId),
       parseInt(seasonId),
+      parseInt(versionId),
       false,
     );
   }
@@ -96,14 +105,17 @@ export class AllFilesController {
     return this.allFilesService.play(fileId, request, response);
   }
 
-  @Get(':titleId/:seasonId?')
+  /** versionId: any file of a version (release) of the season */
+  @Get(':titleId/:seasonId?/:versionId?')
   getTitle(
     @Param('titleId') titleId: string, //actually a number, how to cast?
     @Param('seasonId') seasonId: string, //actually a number, how to cast?
+    @Param('versionId') versionId: string,
   ): Promise<KodiApiResponse> {
     return this.allFilesService.loadTitle(
       parseInt(titleId),
       parseInt(seasonId),
+      parseInt(versionId),
     );
   }
 }

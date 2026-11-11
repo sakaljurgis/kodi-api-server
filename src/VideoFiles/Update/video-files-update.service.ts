@@ -38,8 +38,12 @@ export class VideoFilesUpdateService {
     console.log(
       `file scan and update started - ${refresh ? 'full update' : 'only new'}`,
     );
-    const [filesInFs, filesToRelativePaths] =
+    const [scannedFiles, filesToRelativePaths] =
       await this.scanner.scanFsForVideoFiles();
+    // ignored files count as not there, in both kinds of scan
+    const filesInFs = scannedFiles.filter(
+      (filePath) => !this.isPathToIgnore(filePath),
+    );
 
     await this.repository.markRemovedFilesAsDeleted(filesInFs);
 
@@ -48,8 +52,7 @@ export class VideoFilesUpdateService {
     if (!refresh) {
       const filesInDb = await this.repository.getMatchingPaths(filesInFs);
       filesToAddToDb = filesInFs.filter(
-        (filePath) =>
-          !filesInDb.includes(filePath) && !this.isPathToIgnore(filePath),
+        (filePath) => !filesInDb.includes(filePath),
       );
     }
     const entitiesToSave = [];

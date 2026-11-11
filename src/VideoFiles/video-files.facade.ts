@@ -37,6 +37,14 @@ export class VideoFilesFacade {
       .catch(() => null);
   }
 
+  /** all files that aren't deleted, with their titles */
+  getLiveFiles(): Promise<FileEntity[]> {
+    return this.fileRepository.find({
+      where: { deleted: false },
+      relations: { title: true },
+    });
+  }
+
   async getFile(fileId: number): Promise<FileEntity | null> {
     return this.fileRepository
       .findOne({ where: { id: fileId }, relations: { torrent: true } })

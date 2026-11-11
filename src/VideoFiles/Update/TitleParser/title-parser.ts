@@ -14,15 +14,31 @@ const SEASON =
  */
 const CONTAINER = /(?<![a-z0-9])(?:mkv|avi|mp4)(?![a-z0-9])/i;
 
+/**
+ * Release group ("x264-NTb") or episode name ("Show - S01E01 - Pilot"), the
+ * title ends there. tnp's own takes whatever follows the last hyphen, so
+ * "Spider-Man No Way Home" was "Spider": a hyphen inside a word only counts
+ * when one word follows it.
+ */
+const GROUP = /((?:\s-\s?|-(?=[^\s-]+$))([^-]+))$/;
+
 tnp.configure(
   {
     season: SEASON,
     sample: /sample/i,
     year: /([\[\(]?((?:19[0-9][0-9]|20[0-2][0-9]))[\]\)]?)/,
     container: CONTAINER,
+    group: GROUP,
   },
   { sample: 'boolean' },
 );
+
+/** "The.Expanse.S06E04SP04.One.Ship…": special 4 */
+const SPECIAL = /(?<![a-z])sp([0-9]{2})(?![0-9])/i;
+
+/** a show's folder of extras, its files go to season 0 with the specials */
+const EXTRAS_FOLDER =
+  /^(?:specials?|extras?|featurettes?|bonus(?:es| features)?|behind[ ._-]the[ ._-]scenes|deleted[ ._-]scenes|interviews)$/i;
 
 /** release name words at the end of a title, e.g. "Boston Legal Complete" */
 const TRAILING_JUNK =
@@ -43,16 +59,17 @@ export interface ParsedPath {
 
 /** title, season and episode from a path relative to the media folder */
 export function parseRelativePath(relativePath: string): ParsedPath {
-  const infos = relativePath.split('/').map((segment) => parseSegment(segment));
+  const segments = relativePath.split('/');
+  const infos = segments.map((segment) => parseSegment(segment));
 
-  return { info: combineInfos(infos), infos };
+  return { info: combineInfos(segments, infos), infos };
 }
 
 function parseSegment(segment: string) {
   const info = tnp(segment);
   info.title = info.title ?? '';
 
-  if (!info.season) {
+  if (info.season === undefined) {
     for (const rx of [/season ([0-9]{1,2})/i, /([0-9]{1,2}) sezonas/i]) {
       const match = info.title.match(rx);
       if (match) {
@@ -68,27 +85,61 @@ function parseSegment(segment: string) {
 
 /**
  * Title of the first segment (release folder), season/episode of the deepest
- * one that has them. Season/episode 0 don't count (S00 specials stay in the
- * folder's season, a show's season 0 can't be opened in the menus).
+ * one that has them. Specials are season 0: S00, "SP04", and a show's files
+ * in a Specials/Extras/Featurettes… folder (those keep only an S00 episode).
+ * An episode whose own title is longer than the folder's ("Project Runway All
+ * Stars" in "Project Runway 10 Seasons") is that other show.
  */
-function combineInfos(infos): TitleInfo {
+function combineInfos(segments: string[], infos): TitleInfo {
   const combined: TitleInfo = {
     title: undefined,
     season: undefined,
     episode: undefined,
   };
+  let specialEpisode: number | undefined;
+  let isSpecial = false;
+  let isExtra = false;
 
-  for (const info of infos) {
+  infos.forEach((info, i) => {
     combined.title = combined.title ? combined.title : info.title;
-    if (info.season) {
+    if (typeof info.season === 'number') {
       combined.season = info.season;
     }
     if (info.episode) {
       combined.episode = info.episode;
     }
+    const special = SPECIAL.exec(segments[i]);
+    if (special) {
+      isSpecial = true;
+      specialEpisode = parseInt(special[1]);
+    }
+    if (i < segments.length - 1 && EXTRAS_FOLDER.test(segments[i].trim())) {
+      isExtra = true;
+    }
+  });
+
+  if (isSpecial) {
+    combined.season = 0;
+    combined.episode = specialEpisode;
+  } else if (isExtra && combined.season !== undefined) {
+    if (combined.season !== 0) {
+      combined.episode = undefined;
+    }
+    combined.season = 0;
   }
 
   combined.title = cleanTitle(combined.title ?? '');
+
+  const own = infos[infos.length - 1];
+  const ownTitle = cleanTitle(own.title ?? '');
+  if (
+    infos.length > 1 &&
+    typeof own.season === 'number' &&
+    combined.title &&
+    ownTitle.toLowerCase().startsWith(combined.title.toLowerCase() + ' ')
+  ) {
+    combined.title = ownTitle;
+  }
 
   return combined;
 }

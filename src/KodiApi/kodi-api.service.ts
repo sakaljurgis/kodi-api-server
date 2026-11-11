@@ -14,6 +14,7 @@ export class KodiApiService {
       .setTitle('Menu')
       .addNavigationItems([
         ['Continue watching', 'all/continue'],
+        ['Recently added', 'all/recent'],
         // the "All Files" menu, inlined
         ['Movies', 'all/movie'],
         ['Shows', 'all/show'],

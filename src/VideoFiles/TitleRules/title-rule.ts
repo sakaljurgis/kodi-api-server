@@ -56,7 +56,8 @@ export function applyTitleRules(
 ): ResolvedTitle {
   let title = parsed.title;
   let season = parsed.season;
-  let type = season ? TitleTypeEnum.show : TitleTypeEnum.movie;
+  // season 0 (specials) is a show's too
+  let type = season == null ? TitleTypeEnum.movie : TitleTypeEnum.show;
   let exactTitle = false;
 
   const pathRule = rules
@@ -103,7 +104,7 @@ export function applyTitleRules(
     type = titleRule.type ?? type;
   }
 
-  if (type === TitleTypeEnum.show && !season) {
+  if (type === TitleTypeEnum.show && season == null) {
     season = 1;
   }
 

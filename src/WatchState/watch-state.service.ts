@@ -6,7 +6,9 @@ import { FileEntity } from '../Shared/Entity/file.entity';
 import { TitleTypeEnum } from '../Shared/Enum/title-type.enum';
 import {
   compareFiles,
+  getEpisode,
   getEpisodeKey,
+  getReleaseFolder,
   isSample,
 } from '../Shared/Util/file-order';
 import { PlaybackReport } from './Dto/playback-report.dto';
@@ -152,7 +154,7 @@ export class WatchStateService {
    * episode after it. Only titles played in the last CONTINUE_WATCHING_MONTHS;
    * finished movies and shows are left out, and so are files hidden from
    * Continue watching.
-   * Files come with their title and torrent.
+   * Files come with their title (and its live files) and torrent.
    */
   async getContinueWatching(
     states: WatchStates,
@@ -208,6 +210,7 @@ export class WatchStateService {
       }
 
       if (next && !states.get(next.id)?.hidden) {
+        next.title.files = titleFiles;
         found.push(next);
         activity.set(next, lastPlayed(last));
       }
@@ -224,9 +227,16 @@ export class WatchStateService {
     after: FileEntity,
     states: WatchStates,
   ): FileEntity | null {
+    // after an episode the next episode, after a special (season 0) the next
+    // numbered special; extras without a number are never "next"
+    const inSpecials = after.season === 0;
     const episodes = new Map<string, FileEntity[]>();
     for (const fileEntity of sortedFiles) {
-      if (isSample(fileEntity)) {
+      if (
+        isSample(fileEntity) ||
+        (fileEntity.season === 0) !== inSpecials ||
+        (inSpecials && getEpisode(fileEntity) === undefined)
+      ) {
         continue;
       }
       const key = getEpisodeKey(fileEntity);
@@ -244,11 +254,18 @@ export class WatchStateService {
       if (releases.some((fileEntity) => states.get(fileEntity.id)?.watched)) {
         continue;
       }
-      // the release that was started, else the biggest one
+      // the release that was started, else the one watched so far, else the biggest
+      const release = getReleaseFolder(after.relativePath);
       return (
         releases.find(
           (fileEntity) => states.get(fileEntity.id)?.position > 0,
-        ) ?? releases.reduce((a, b) => (b.size > a.size ? b : a))
+        ) ??
+        releases.find(
+          (fileEntity) =>
+            release !== undefined &&
+            getReleaseFolder(fileEntity.relativePath) === release,
+        ) ??
+        releases.reduce((a, b) => (b.size > a.size ? b : a))
       );
     }
 

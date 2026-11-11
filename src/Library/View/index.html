@@ -171,7 +171,7 @@
   const fileName = (path) => path.slice(path.lastIndexOf('/') + 1);
   const isSample = (path) => /\bsample\b/i.test(fileName(path));
   const matchesPath = (rule, path) => path === rule.match || path.startsWith(rule.match + '/');
-  const epLabel = (f) => (f.season ? 'S' + String(f.season).padStart(2, '0') : '') + (f.episode ? 'E' + String(f.episode).padStart(2, '0') : '');
+  const epLabel = (f) => (f.season != null ? 'S' + String(f.season).padStart(2, '0') : '') + (f.episode ? 'E' + String(f.episode).padStart(2, '0') : '');
 
   function toast(text, isError) {
     const el = $('toast');

@@ -26,13 +26,15 @@ export class StreamerService {
       return this.handleUnsatisfiable(size, res);
     }
 
+    // without a Range header it's the whole file: 200, no Content-Range
+    const isPartial = !!req.headers.range;
     const responseHeaders = this.responseHeadersService.createResponseHeaders(
       streamCreatable.mimeType,
       size,
-      requestRange,
+      isPartial ? requestRange : null,
     );
 
-    const status = req.headers.range ? 206 : 200;
+    const status = isPartial ? 206 : 200;
     const readable =
       req.method === 'HEAD'
         ? null

@@ -15,7 +15,16 @@ import {
   WatchStates,
   WatchStateService,
 } from '../../WatchState/watch-state.service';
-import { compareFiles } from '../../Shared/Util/file-order';
+import {
+  compareFiles,
+  getEpisodeKey,
+  isSample,
+} from '../../Shared/Util/file-order';
+import { SeasonVersions, splitVersions } from '../../Shared/Util/file-versions';
+import { getRecentAdditions, RecentAddition } from './recent-additions';
+
+const RECENTLY_ADDED_LIMIT = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AllFilesService {
@@ -47,15 +56,22 @@ export class AllFilesService {
     const response = this.koiApiResponseFactory.createApiResponse();
     response.setTitle('All ' + type + 's');
     entities.forEach((entity) => {
+      const files = entity.files.filter((fileEntity) => !isSample(fileEntity));
+      if (!files.length) {
+        return;
+      }
       const item = response
         .createItem()
         .setLabel(entity.title)
         .setToFolder()
-        .setPlot(
-          entity.files.length + (entity.files.length > 1 ? ' files' : ' file'),
-        )
+        .setPlot(plural(files.length, 'file'))
         .setPath('all/' + entity.id);
-      this.addFolderWatchState(item, entity.files, states, '' + entity.id);
+      this.addFolderWatchState(
+        item,
+        withoutSpecials(files),
+        states,
+        '' + entity.id,
+      );
     });
 
     return response;
@@ -75,10 +91,7 @@ export class AllFilesService {
 
     for (const fileEntity of fileEntities) {
       const titleEntity = fileEntity.title;
-      const folder =
-        titleEntity.type === TitleTypeEnum.show
-          ? `all/${titleEntity.id}/${fileEntity.season}`
-          : `all/${titleEntity.id}`;
+      const folder = 'all/' + this.getFolderPath(titleEntity, fileEntity);
       const item = this.addFileItem(
         apiResponse,
         fileEntity,
@@ -96,7 +109,16 @@ export class AllFilesService {
     return apiResponse;
   }
 
-  async loadTitle(titleId: number, seasonId: number): Promise<KodiApiResponse> {
+  /**
+   * A movie's files, a show's seasons, or a season's episodes. A season with
+   * the same episodes in several releases lists the releases (versions) as
+   * folders first; versionId (any file of one) opens that one.
+   */
+  async loadTitle(
+    titleId: number,
+    seasonId: number,
+    versionId?: number,
+  ): Promise<KodiApiResponse> {
     const titleEntity = titleId
       ? await this.videoFilesFacade.getTitleWithFiles(titleId)
       : null;
@@ -109,28 +131,170 @@ export class AllFilesService {
     }
 
     const states = await this.watchStateService.getAll();
+    const files = titleEntity.files.filter(
+      (fileEntity) => !isSample(fileEntity),
+    );
 
     if (titleEntity.type === TitleTypeEnum.movie) {
+      return this.buildFilesResponse(titleEntity.title, files, false, states);
+    }
+
+    if (!isSeason(seasonId)) {
+      return this.buildSeasonsResponse(titleEntity, files, states);
+    }
+
+    const seasonFiles = getSeasonFiles(files, seasonId);
+    const split = splitVersions(seasonFiles);
+    // (a version that's gone, e.g. after a delete, shows the season)
+    const version = findVersion(split, versionId);
+    if (version) {
       return this.buildFilesResponse(
         titleEntity.title,
-        titleEntity.files,
+        version.files,
         false,
         states,
       );
     }
-
-    if (seasonId) {
-      return this.buildFilesResponse(
-        titleEntity.title,
-        titleEntity.files.filter(
-          (fileEntity) => fileEntity.season === seasonId,
-        ),
-        false,
-        states,
-      );
+    if (split) {
+      return this.buildVersionsResponse(titleEntity, seasonId, split, states);
     }
 
-    return this.buildSeasonsResponse(titleEntity, states);
+    return this.buildFilesResponse(
+      titleEntity.title,
+      seasonFiles,
+      false,
+      states,
+    );
+  }
+
+  /**
+   * Movies and shows that got files, newest first, one entry per title for
+   * what was added to it last: a new movie or show opens the title, new
+   * episodes or a new season open the season, several seasons the show.
+   */
+  async getRecentlyAdded(): Promise<ApiResponse> {
+    const [files, states] = await Promise.all([
+      this.videoFilesFacade.getLiveFiles(),
+      this.watchStateService.getAll(),
+    ]);
+    const apiResponse = this.koiApiResponseFactory.createApiResponse();
+    apiResponse.setTitle('Recently added').setNoSort();
+
+    for (const addition of getRecentAdditions(files, RECENTLY_ADDED_LIMIT)) {
+      const {
+        label,
+        path,
+        files: folderFiles,
+        plot,
+      } = this.describeAddition(addition);
+      if (addition.addedAt) {
+        plot.push('Added ' + formatAddedAgo(addition.addedAt));
+      }
+      const item = apiResponse
+        .createItem()
+        .setLabel(label)
+        .setToFolder()
+        .setPlot(plot.join('\n'))
+        .setPath('all/' + path);
+      if (addition.addedAt) {
+        item.setDate(formatKodiDate(addition.addedAt));
+      }
+      this.addFolderWatchState(item, folderFiles, states, path);
+    }
+
+    return apiResponse;
+  }
+
+  /** label, path (`<titleId>[/<season>]`) and files of the folder an addition opens */
+  private describeAddition(addition: RecentAddition): {
+    label: string;
+    path: string;
+    files: FileEntity[];
+    plot: string[];
+  } {
+    const { title, titleFiles, added, seasons, newSeasons, newEpisodes } =
+      addition;
+    const whole = {
+      label: title.title,
+      path: '' + title.id,
+      files: withoutSpecials(titleFiles),
+    };
+
+    if (title.type === TitleTypeEnum.movie) {
+      return {
+        ...whole,
+        plot: [
+          addition.isNewTitle
+            ? 'New movie'
+            : added.length === 1
+            ? 'New file: ' + added[0].fileName
+            : plural(added.length, 'new file'),
+        ],
+      };
+    }
+
+    const addedEpisodes = plural(countEpisodes(added), 'episode');
+    const regularSeasons = seasons.filter((season) => season !== 0);
+    if (addition.isNewTitle) {
+      return {
+        ...whole,
+        plot: [
+          `New show · ${plural(
+            regularSeasons.length,
+            'season',
+          )} · ${addedEpisodes}`,
+        ],
+      };
+    }
+
+    const changes =
+      seasons.length === 1 && seasons[0] === 0
+        ? plural(countEpisodes(added), 'new special')
+        : newSeasons.length === seasons.length
+        ? seasons.length === 1
+          ? `New season · ${addedEpisodes}`
+          : `${seasons.length} new seasons · ${addedEpisodes}`
+        : newEpisodes
+        ? plural(newEpisodes, 'new episode')
+        : `New version · ${addedEpisodes}`;
+
+    if (seasons.length === 1) {
+      return {
+        label: `${title.title} · ${
+          seasons[0] === 0 ? 'Specials' : 'Season ' + seasons[0]
+        }`,
+        path: `${title.id}/${seasons[0]}`,
+        files: getSeasonFiles(titleFiles, seasons[0]),
+        plot: [changes],
+      };
+    }
+
+    const specials = regularSeasons.length < seasons.length;
+    return {
+      ...whole,
+      label:
+        `${title.title} · ` +
+        (regularSeasons.length === 1
+          ? `Season ${regularSeasons[0]}`
+          : `Seasons ${formatSeasons(regularSeasons)}`) +
+        (specials ? ' + Specials' : ''),
+      plot: [changes],
+    };
+  }
+
+  /** the folder a file is listed in: `<titleId>[/<season>[/<versionId>]]`; the title comes with its files */
+  private getFolderPath(titleEntity: TitleEntity, fileEntity: FileEntity) {
+    if (titleEntity.type !== TitleTypeEnum.show) {
+      return '' + titleEntity.id;
+    }
+
+    const seasonPath = `${titleEntity.id}/${fileEntity.season}`;
+    const split = splitVersions(
+      getSeasonFiles(titleEntity.files ?? [], fileEntity.season),
+    );
+    const version = findVersion(split, fileEntity.id);
+
+    return version ? `${seasonPath}/${version.id}` : seasonPath;
   }
 
   /** in episode order */
@@ -143,23 +307,70 @@ export class AllFilesService {
     const apiResponse = this.koiApiResponseFactory.createApiResponse();
     apiResponse.setTitle(title).setNoSort();
     for (const fileEntity of [...fileEntities].sort(compareFiles)) {
-      const state = states.get(fileEntity.id);
-      const item = this.addFileItem(apiResponse, fileEntity, state);
-
-      if (!torrentContext) {
-        this.addWatchedMenus(item, fileEntity, state);
-        if (fileEntity.torrentId) {
-          item.addContextMenu(
-            'Show torrent',
-            'torr/torrent-context/' + fileEntity.torrentId,
-          );
-        } else {
-          item.addContextMenu('Delete file', 'all/delete/' + fileEntity.id);
-        }
+      if (torrentContext) {
+        this.addFileItem(apiResponse, fileEntity, states.get(fileEntity.id));
+      } else {
+        this.addLibraryFileItem(apiResponse, fileEntity, states);
       }
     }
 
     return apiResponse;
+  }
+
+  /** the versions as folders, then the season's other files */
+  private buildVersionsResponse(
+    titleEntity: TitleEntity,
+    season: number,
+    { versions, others }: SeasonVersions,
+    states: WatchStates,
+  ): ApiResponse {
+    const apiResponse = this.koiApiResponseFactory.createApiResponse();
+    apiResponse.setTitle(titleEntity.title).setNoSort();
+
+    for (const version of versions) {
+      const path = `${titleEntity.id}/${season}/${version.id}`;
+      const size = version.files.reduce((sum, file) => sum + file.size, 0);
+      const item = apiResponse
+        .createItem()
+        .setLabel(version.label)
+        .setToFolder()
+        .setPlot(
+          [plural(countEpisodes(version.files), 'episode')]
+            .concat(size > 0 ? [this.getHRFileSize(size)] : [])
+            .join(' · ') +
+            '\n' +
+            version.releaseFolder,
+        )
+        .setPath('all/' + path);
+      this.addFolderWatchState(item, version.files, states, path);
+    }
+
+    for (const fileEntity of others) {
+      this.addLibraryFileItem(apiResponse, fileEntity, states);
+    }
+
+    return apiResponse;
+  }
+
+  /** a file with the watched/delete/torrent menus */
+  private addLibraryFileItem(
+    apiResponse: ApiResponse,
+    fileEntity: FileEntity,
+    states: WatchStates,
+  ): ResponseItem {
+    const state = states.get(fileEntity.id);
+    const item = this.addFileItem(apiResponse, fileEntity, state);
+    this.addWatchedMenus(item, fileEntity, state);
+    if (fileEntity.torrentId) {
+      item.addContextMenu(
+        'Show torrent',
+        'torr/torrent-context/' + fileEntity.torrentId,
+      );
+    } else {
+      item.addContextMenu('Delete file', 'all/delete/' + fileEntity.id);
+    }
+
+    return item;
   }
 
   private addFileItem(
@@ -192,7 +403,7 @@ export class AllFilesService {
     }
   }
 
-  /** watched count + menus marking all of it; titlePath is `<titleId>[/<season>]` */
+  /** watched count + menus marking all of it; titlePath is `<titleId>[/<season>[/<versionId>]]` */
   private addFolderWatchState(
     item: ResponseItem,
     fileEntities: FileEntity[],
@@ -217,28 +428,30 @@ export class AllFilesService {
 
   private buildSeasonsResponse(
     titleEntity: TitleEntity,
+    files: FileEntity[],
     states: WatchStates,
   ): ApiResponse {
     const apiResponse = this.koiApiResponseFactory.createApiResponse();
     apiResponse.setTitle(titleEntity.title).setNoSort();
 
     const filesBySeason = new Map<number, FileEntity[]>();
-    for (const fileEntity of titleEntity.files) {
+    for (const fileEntity of files) {
       const seasonFiles = filesBySeason.get(fileEntity.season) ?? [];
       seasonFiles.push(fileEntity);
       filesBySeason.set(fileEntity.season, seasonFiles);
     }
 
-    const seasons = [...filesBySeason.keys()].sort((a, b) => a - b);
+    // specials (season 0) last
+    const seasons = [...filesBySeason.keys()].sort(
+      (a, b) => (a || Infinity) - (b || Infinity),
+    );
     for (const season of seasons) {
       const seasonFiles = filesBySeason.get(season);
       const item = apiResponse
         .createItem()
-        .setLabel(season + ' Sezonas')
+        .setLabel(season === 0 ? 'Specials' : season + ' Sezonas')
         .setToFolder()
-        .setPlot(
-          seasonFiles.length + (seasonFiles.length > 1 ? ' files' : ' file'),
-        )
+        .setPlot(plural(seasonFiles.length, 'file'))
         .setPath(`all/${titleEntity.id}/${season}`);
       this.addFolderWatchState(
         item,
@@ -337,10 +550,11 @@ export class AllFilesService {
     );
   }
 
-  /** a whole movie/show, or one season of a show */
+  /** a whole movie/show, one season of a show, or one version of a season */
   async setTitleWatched(
     titleId: number,
     seasonId: number,
+    versionId: number,
     watched: boolean,
   ): Promise<NotificationResponse> {
     const titleEntity = titleId
@@ -350,9 +564,19 @@ export class AllFilesService {
       throw new NotFoundException(`title #${titleId} not found`);
     }
 
-    const fileEntities = seasonId
+    const seasonFiles = isSeason(seasonId)
       ? titleEntity.files.filter((fileEntity) => fileEntity.season === seasonId)
       : titleEntity.files;
+    const version = versionId
+      ? findVersion(
+          splitVersions(seasonFiles.filter((file) => !isSample(file))),
+          versionId,
+        )
+      : undefined;
+    if (versionId && !version) {
+      throw new NotFoundException(`version #${versionId} not found`);
+    }
+    const fileEntities = version?.files ?? seasonFiles;
     await this.watchStateService.setWatched(
       fileEntities.map((fileEntity) => fileEntity.id),
       watched,
@@ -388,4 +612,82 @@ export class AllFilesService {
       result,
     );
   }
+}
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? '' : 's'}`;
+}
+
+/** releases of the same episode count once */
+function countEpisodes(files: FileEntity[]): number {
+  return new Set(files.map(getEpisodeKey)).size;
+}
+
+/** a season from a path (0 = specials), not NaN from a missing one */
+function isSeason(seasonId: number): boolean {
+  return Number.isInteger(seasonId);
+}
+
+/** a show's watched count leaves out its specials (season 0) */
+function withoutSpecials(files: FileEntity[]): FileEntity[] {
+  return files.filter((fileEntity) => fileEntity.season !== 0);
+}
+
+function getSeasonFiles(files: FileEntity[], season: number): FileEntity[] {
+  return files.filter(
+    (fileEntity) => fileEntity.season === season && !isSample(fileEntity),
+  );
+}
+
+/** the version a file is in */
+function findVersion(split: SeasonVersions | null, fileId: number) {
+  return fileId
+    ? split?.versions.find((version) =>
+        version.files.some((fileEntity) => fileEntity.id === fileId),
+      )
+    : undefined;
+}
+
+/** 3–5, or 2, 5, 7 */
+function formatSeasons(seasons: number[]): string {
+  const isRange = seasons.every(
+    (season, i) => i === 0 || season === seasons[i - 1] + 1,
+  );
+
+  return isRange
+    ? `${seasons[0]}–${seasons[seasons.length - 1]}`
+    : seasons.join(', ');
+}
+
+/** today, yesterday, 3 days ago, 2 weeks ago, else the date */
+function formatAddedAgo(addedAt: number, now = Date.now()): string {
+  const day = (time: number) =>
+    Math.floor(
+      (time - new Date(time).getTimezoneOffset() * 60 * 1000) / DAY_MS,
+    );
+  const days = day(now) - day(addedAt);
+  if (days <= 0) {
+    return 'today';
+  }
+  if (days === 1) {
+    return 'yesterday';
+  }
+  if (days < 14) {
+    return `${days} days ago`;
+  }
+  if (days < 60) {
+    return `${Math.floor(days / 7)} weeks ago`;
+  }
+
+  return new Date(addedAt).toISOString().slice(0, 10);
+}
+
+/** what Kodi's date expects: 01.12.2026 */
+function formatKodiDate(time: number): string {
+  const date = new Date(time);
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  return `${pad(date.getDate())}.${pad(
+    date.getMonth() + 1,
+  )}.${date.getFullYear()}`;
 }

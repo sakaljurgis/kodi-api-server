@@ -60,4 +60,8 @@ export class FileEntity {
 
   @Column({ type: 'float' })
   progress: number;
+
+  /** when the file was first found (ms epoch); null if before this was kept */
+  @Column({ name: 'added_at' })
+  addedAt: number | null;
 }
