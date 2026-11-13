@@ -13,6 +13,9 @@ services:
       - $RECENT_SEARCHES_FOLDER:/srv/data/recent-searches
     env_file:
       - .env
+    environment:
+      # the source is mounted over the image's build (/srv/app), so start.sh builds it again
+      - BUILD_ON_START=1
     ports:
       - $PORT:$PORT
     extra_hosts:
