@@ -27,6 +27,12 @@ import { getRecentAdditions, RecentAddition } from './recent-additions';
 import { ArtworkService } from '../../Artwork/artwork.service';
 import { Art, ArtworkIndex } from '../../Artwork/artwork-index';
 import { UpNextDto, UpNextEpisode } from './up-next.dto';
+import {
+  ChapterMarkers,
+  getChapterMarkers,
+  getPlayLength,
+  parseChapters,
+} from '../../Shared/Util/chapters';
 
 const RECENTLY_ADDED_LIMIT = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -34,7 +40,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const PLAY_PATH = '/api?path=all/play/';
 /**
  * Share of the playback from which players offer the next episode ("Up
- * next"); the share that counts as watched for now, to be tuned.
+ * next") when its chapters don't mark the end credits; the share that counts
+ * as watched for now, to be tuned.
  */
 const UP_NEXT_AT = 0.9;
 
@@ -446,7 +453,8 @@ export class AllFilesService {
       .setPlot(this.buildPlot(fileEntity))
       .setSize(fileEntity.size)
       .setDuration(fileEntity.duration)
-      .setWatchState(state);
+      .setWatchState(state)
+      .setMarkers(getMarkers(fileEntity));
   }
 
   /** "Mark unwatched" also clears a resume point */
@@ -561,8 +569,18 @@ export class AllFilesService {
     const titleEntity = fileEntity.titleId
       ? await this.videoFilesFacade.getTitleWithFiles(fileEntity.titleId)
       : null;
+    const markers = getMarkers(fileEntity);
+    const length = getPlayLength(
+      parseChapters(fileEntity.chapters),
+      fileEntity.duration,
+    );
+    // from the end credits when they're marked
+    const popupAt =
+      markers.creditsAt !== null && length > 0
+        ? Math.round((markers.creditsAt / length) * 10000) / 10000
+        : UP_NEXT_AT;
     if (titleEntity === null) {
-      return { current: null, next: null, popupAt: UP_NEXT_AT };
+      return { current: null, next: null, popupAt };
     }
 
     const files = [...titleEntity.files].sort(compareFiles);
@@ -580,13 +598,14 @@ export class AllFilesService {
       fileName: episode.fileName,
       path: PLAY_PATH + episode.id,
       duration: episode.duration ?? null,
+      ...getMarkers(episode),
       ...art.forFile(episode, titleEntity, files),
     });
 
     return {
       current: describe(fileEntity),
       next: next ? describe(next) : null,
-      popupAt: UP_NEXT_AT,
+      popupAt,
     };
   }
 
@@ -834,4 +853,12 @@ function formatKodiDate(time: number): string {
   return `${pad(date.getDate())}.${pad(
     date.getMonth() + 1,
   )}.${date.getFullYear()}`;
+}
+
+/** intros/recaps and end credits from the file's chapters */
+function getMarkers(fileEntity: FileEntity): ChapterMarkers {
+  return getChapterMarkers(
+    parseChapters(fileEntity.chapters),
+    fileEntity.duration,
+  );
 }

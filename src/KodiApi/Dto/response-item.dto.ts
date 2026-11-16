@@ -1,6 +1,7 @@
 import ContextMenu from './context-menu.dto';
 import { WatchStateEntity } from '../../Shared/Entity/watch-state.entity';
 import { Art } from '../../Artwork/artwork-index';
+import { ChapterMarkers, SkipSegment } from '../../Shared/Util/chapters';
 
 export default class ResponseItem {
   isFolder = false;
@@ -30,6 +31,9 @@ export default class ResponseItem {
   /** files listed outside their folder (Continue watching): where they are */
   folder: string;
   folderTitle: string;
+  /** files, from their chapters (only when marked): intros/recaps to skip, end credits start (s) */
+  skip: SkipSegment[];
+  creditsAt: number;
 
   constructor() {
     this.setToPlayable();
@@ -157,6 +161,18 @@ export default class ResponseItem {
   setFolder(path: string, title: string) {
     this.folder = path;
     this.folderTitle = title;
+
+    return this;
+  }
+
+  /** only what's marked (most files have nothing) */
+  setMarkers({ skip, creditsAt }: ChapterMarkers) {
+    if (skip.length) {
+      this.skip = skip;
+    }
+    if (creditsAt !== null) {
+      this.creditsAt = creditsAt;
+    }
 
     return this;
   }

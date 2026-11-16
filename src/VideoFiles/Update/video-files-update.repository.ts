@@ -141,6 +141,39 @@ export class VideoFilesUpdateRepository {
   }
 
   /** only what the title info expander sets */
+  /** files on disk (not deleted) whose chapters were never read, newest first */
+  public findFilesWithoutChapters(): Promise<FileEntity[]> {
+    return this.fileRepository.find({
+      where: this.withoutChapters(),
+      order: { id: 'DESC' },
+    });
+  }
+
+  public countFilesWithoutChapters(): Promise<number> {
+    return this.fileRepository.count({ where: this.withoutChapters() });
+  }
+
+  private withoutChapters() {
+    return {
+      deleted: false,
+      streamProvider: StreamProviderEnum.fs,
+      relativePath: Not(IsNull()),
+      chapters: IsNull(),
+    };
+  }
+
+  /** chapters, and the duration if given */
+  public async saveMediaInfo(
+    fileId: number,
+    chapters: string,
+    duration?: number,
+  ): Promise<void> {
+    await this.fileRepository.update(
+      fileId,
+      duration > 0 ? { chapters, duration } : { chapters },
+    );
+  }
+
   public async saveTitleInfo(fileEntities: FileEntity[]): Promise<void> {
     await this.fileRepository.manager.transaction(async (manager) => {
       for (const fileEntity of fileEntities) {

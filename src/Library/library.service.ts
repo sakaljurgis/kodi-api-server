@@ -159,4 +159,12 @@ export class LibraryService {
   async reparse() {
     return { changed: await this.videoFilesFacade.reparseTitles() };
   }
+
+  readChapters() {
+    return this.videoFilesFacade.readChapters();
+  }
+
+  getChapterReading() {
+    return this.videoFilesFacade.getChapterReading();
+  }
 }

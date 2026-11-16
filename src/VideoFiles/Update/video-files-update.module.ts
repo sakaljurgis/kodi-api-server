@@ -12,7 +12,7 @@ import { VideoFilesScannerService } from './Scanner/video-files-scanner.service'
 import { VideoFilesUpdateRepository } from './video-files-update.repository';
 import { FileEntitySizeExpander } from './Expander/file-entity-size.expander';
 import { FileEntityDefaultsExpander } from './Expander/file-entity-defaults.expander';
-import { FileEntityDurationExpander } from './Expander/file-entity-duration.expander';
+import { FileEntityMediaInfoExpander } from './Expander/file-entity-media-info.expander';
 import { FileEntityTransmissionExpander } from './Expander/file-entity-transmission.expander';
 import { TorrentSeedClientModule } from '../../Torrent/SeedClient/torrent-seed-client.module';
 import { TitleRulesModule } from '../TitleRules/title-rules.module';
@@ -23,7 +23,7 @@ const fileEntityExpanders: Provider<any>[] = [
   FileEntityDefaultsExpander,
   FileEntitySizeExpander,
   FileEntityTitleInfoExpander,
-  FileEntityDurationExpander,
+  FileEntityMediaInfoExpander,
   FileEntityTransmissionExpander,
   {
     provide: FileEntityExpanders,
@@ -33,7 +33,7 @@ const fileEntityExpanders: Provider<any>[] = [
       FileEntityDefaultsExpander,
       FileEntitySizeExpander,
       FileEntityTitleInfoExpander,
-      FileEntityDurationExpander,
+      FileEntityMediaInfoExpander,
       FileEntityTransmissionExpander,
     ],
   },

@@ -4,7 +4,10 @@ import { In, Repository } from 'typeorm';
 import { TitleEntity } from '../Shared/Entity/title.entity';
 import { TitleTypeEnum } from '../Shared/Enum/title-type.enum';
 import { FileEntity } from '../Shared/Entity/file.entity';
-import { VideoFilesUpdateService } from './Update/video-files-update.service';
+import {
+  ChapterReading,
+  VideoFilesUpdateService,
+} from './Update/video-files-update.service';
 import NotificationResponse from '../KodiApi/Dto/notification-response.dto';
 import { Stats } from 'fs';
 import { stat, unlink } from 'fs/promises';
@@ -78,6 +81,15 @@ export class VideoFilesFacade {
   /** title and season of every file again; how many files changed */
   reparseTitles(): Promise<number> {
     return this.videoFilesUpdateService.reparseTitles();
+  }
+
+  /** starts reading the chapters of files never read, in the background */
+  readChapters(): Promise<ChapterReading> {
+    return this.videoFilesUpdateService.readChapters();
+  }
+
+  getChapterReading(): Promise<ChapterReading> {
+    return this.videoFilesUpdateService.getChapterReading();
   }
 
   addVideoFiles(

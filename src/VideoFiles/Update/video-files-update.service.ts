@@ -9,6 +9,20 @@ import { VideoFilesConfig } from '../../config/video-files.config';
 import { FileEntityTitleInfoExpander } from './Expander/file-entity-title-info.expander';
 import { getReleaseFolder, isSample } from '../../Shared/Util/file-order';
 import { ArtworkService } from '../../Artwork/artwork.service';
+import { probeMedia } from './media-probe';
+
+/** ffprobes running at once while reading chapters */
+const CHAPTER_READERS = 3;
+
+/** reading the chapters of files that never had them read (readChapters) */
+export interface ChapterReading {
+  running: boolean;
+  /** still to read in this run; when not running, files never read */
+  left: number;
+  /** read / unreadable in this run, or the last one */
+  read: number;
+  failed: number;
+}
 
 @Injectable()
 export class VideoFilesUpdateService {
@@ -25,6 +39,86 @@ export class VideoFilesUpdateService {
 
   /** scans and title re-parses run one at a time */
   private queue: Promise<unknown> = Promise.resolve();
+
+  /** the current or last chapter reading */
+  private chapterReading: ChapterReading = {
+    running: false,
+    left: 0,
+    read: 0,
+    failed: 0,
+  };
+
+  /**
+   * Starts reading the chapters (and missing durations) of the files on disk
+   * that never had them read, a few at a time in the background, newest
+   * first; files found from now on get them when found. Unreadable ones stay
+   * unread (tried again next time). Answers right away: see getChapterReading.
+   */
+  async readChapters(): Promise<ChapterReading> {
+    if (this.chapterReading.running) {
+      return { ...this.chapterReading };
+    }
+
+    // (running before the query: a second click doesn't start another run)
+    const reading = { running: true, left: 0, read: 0, failed: 0 };
+    this.chapterReading = reading;
+    let fileEntities: FileEntity[];
+    try {
+      fileEntities = await this.repository.findFilesWithoutChapters();
+    } finally {
+      reading.running = Boolean(fileEntities?.length);
+    }
+    reading.left = fileEntities.length;
+    if (fileEntities.length) {
+      console.log(`reading chapters of ${fileEntities.length} files`);
+      this.readAllChapters(reading, fileEntities).finally(() => {
+        reading.running = false;
+        console.log(
+          `chapters read: ${reading.read} files, ${reading.failed} unreadable`,
+        );
+      });
+    }
+
+    return { ...reading };
+  }
+
+  async getChapterReading(): Promise<ChapterReading> {
+    return this.chapterReading.running
+      ? { ...this.chapterReading }
+      : {
+          ...this.chapterReading,
+          left: await this.repository.countFilesWithoutChapters(),
+        };
+  }
+
+  private async readAllChapters(
+    reading: ChapterReading,
+    fileEntities: FileEntity[],
+  ): Promise<void> {
+    const queue = [...fileEntities];
+    const reader = async () => {
+      for (let file = queue.shift(); file; file = queue.shift()) {
+        try {
+          const info = await probeMedia(file.path);
+          if (info) {
+            await this.repository.saveMediaInfo(
+              file.id,
+              JSON.stringify(info.chapters),
+              file.duration > 0 ? undefined : info.duration,
+            );
+            reading.read++;
+          } else {
+            reading.failed++;
+          }
+        } catch (e) {
+          console.log(`reading chapters of #${file.id} failed`, e);
+          reading.failed++;
+        }
+        reading.left--;
+      }
+    };
+    await Promise.all(Array.from({ length: CHAPTER_READERS }, reader));
+  }
 
   /**
    * Scan for new files and remove deleted.

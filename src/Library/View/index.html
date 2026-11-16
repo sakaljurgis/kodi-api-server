@@ -109,6 +109,7 @@
   <span class="spacer"></span>
   <button id="refetch-art" title="Search TMDB again for every match not picked by hand">Refresh artwork</button>
   <button id="reparse" title="Parse every file's title again with the current rules (no re-scan)">Re-parse all</button>
+  <button id="read-chapters" title="Read the chapters (intro, recap and credits markers for players) of the files never read; runs in the background, takes minutes the first time. New files get them when found.">Read chapters</button>
 </header>
 
 <main>
@@ -552,7 +553,53 @@
       .then((ok) => { if (ok) { $('contains-match').value = ''; $('contains-title').value = ''; } });
   });
 
+  // ---- chapters, read in the background ----
+
+  function showChapters(c) {
+    $('read-chapters').textContent = c.running
+      ? 'Reading chapters… ' + c.left + ' left'
+      : 'Read chapters' + (c.left ? ' (' + c.left + ')' : '');
+  }
+
+  /** shows what's left; while a run goes on, follows it */
+  async function followChapters() {
+    if (followChapters.active) return;
+    followChapters.active = true;
+    try {
+      let c = await api('GET', '/library/chapters');
+      showChapters(c);
+      while (c.running) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        c = await api('GET', '/library/chapters');
+        showChapters(c);
+        if (!c.running) {
+          toast('Chapters read: ' + c.read + (c.read === 1 ? ' file' : ' files') + (c.failed ? ' · ' + c.failed + ' unreadable' : ''));
+        }
+      }
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      followChapters.active = false;
+    }
+  }
+
+  $('read-chapters').addEventListener('click', async () => {
+    try {
+      const c = await api('POST', '/library/chapters');
+      if (!c.running) {
+        toast('Every file’s chapters are read');
+        showChapters(c);
+        return;
+      }
+      toast('Reading the chapters of ' + c.left + (c.left === 1 ? ' file' : ' files') + ' in the background…');
+      followChapters();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+
   load().catch((e) => toast(e.message, true));
+  followChapters();
 </script>
 </body>
 </html>

@@ -71,4 +71,11 @@ export class FileEntity {
   /** when the file was first found (ms epoch); null if before this was kept */
   @Column({ name: 'added_at' })
   addedAt: number | null;
+
+  /**
+   * Its chapters as ffprobe read them, JSON `[{start, end, title}]` (s), see
+   * Shared/Util/chapters.ts; null = not read yet, `[]` = none.
+   */
+  @Column({ type: 'text', nullable: true })
+  chapters: string | null;
 }

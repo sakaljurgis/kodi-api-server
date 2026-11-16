@@ -52,6 +52,18 @@ export class LibraryController {
     return this.libraryService.reparse();
   }
 
+  /** {running, left, read, failed}: left = files never read when not running */
+  @Get('chapters')
+  getChapterReading() {
+    return this.libraryService.getChapterReading();
+  }
+
+  /** starts reading the chapters of files never read (background, minutes) */
+  @Post('chapters')
+  readChapters() {
+    return this.libraryService.readChapters();
+  }
+
   /** every automatic match searched again; answers when done */
   @Post('artwork/refetch')
   refetchArtwork() {
