@@ -52,3 +52,58 @@ export function compareFiles(a: FileEntity, b: FileEntity): number {
 
   return collator.compare(a.fileName, b.fileName);
 }
+
+/**
+ * The episodes [after] can go on to, in order, each with its files (one per
+ * release): after an episode the regular episodes, after a special (season 0)
+ * the numbered specials; samples and extras without a number are never next.
+ * [sortedFiles] are a title's files in order (compareFiles).
+ */
+export function groupEpisodes(
+  sortedFiles: FileEntity[],
+  after: FileEntity,
+): Map<string, FileEntity[]> {
+  const inSpecials = after.season === 0;
+  const episodes = new Map<string, FileEntity[]>();
+  for (const fileEntity of sortedFiles) {
+    if (
+      isSample(fileEntity) ||
+      (fileEntity.season === 0) !== inSpecials ||
+      (inSpecials && getEpisode(fileEntity) === undefined)
+    ) {
+      continue;
+    }
+    const key = getEpisodeKey(fileEntity);
+    episodes.set(key, [...(episodes.get(key) ?? []), fileEntity]);
+  }
+
+  return episodes;
+}
+
+/**
+ * The episode right after [after] (E03 → E04, a season's last → the next
+ * season's first), watched or not: from [after]'s release when it has it,
+ * else the biggest file of it. Null after the last one, or for a file that
+ * isn't an episode in [sortedFiles] (see groupEpisodes).
+ */
+export function getNextInOrder(
+  sortedFiles: FileEntity[],
+  after: FileEntity,
+): FileEntity | null {
+  const episodes = groupEpisodes(sortedFiles, after);
+  const keys = [...episodes.keys()];
+  const index = keys.indexOf(getEpisodeKey(after));
+  const releases = index === -1 ? undefined : episodes.get(keys[index + 1]);
+  if (!releases) {
+    return null;
+  }
+
+  const release = getReleaseFolder(after.relativePath);
+  return (
+    releases.find(
+      (fileEntity) =>
+        release !== undefined &&
+        getReleaseFolder(fileEntity.relativePath) === release,
+    ) ?? releases.reduce((a, b) => (b.size > a.size ? b : a))
+  );
+}

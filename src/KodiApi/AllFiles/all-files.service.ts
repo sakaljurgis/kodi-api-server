@@ -17,16 +17,26 @@ import {
 } from '../../WatchState/watch-state.service';
 import {
   compareFiles,
+  getEpisode,
   getEpisodeKey,
+  getNextInOrder,
   isSample,
 } from '../../Shared/Util/file-order';
 import { SeasonVersions, splitVersions } from '../../Shared/Util/file-versions';
 import { getRecentAdditions, RecentAddition } from './recent-additions';
 import { ArtworkService } from '../../Artwork/artwork.service';
 import { Art, ArtworkIndex } from '../../Artwork/artwork-index';
+import { UpNextDto, UpNextEpisode } from './up-next.dto';
 
 const RECENTLY_ADDED_LIMIT = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** server-relative path that streams a file, + its id */
+const PLAY_PATH = '/api?path=all/play/';
+/**
+ * Share of the playback from which players offer the next episode ("Up
+ * next"); the share that counts as watched for now, to be tuned.
+ */
+const UP_NEXT_AT = 0.9;
 
 @Injectable()
 export class AllFilesService {
@@ -431,7 +441,7 @@ export class AllFilesService {
     return apiResponse
       .createItem()
       .setLabel(fileEntity.fileName)
-      .setPath('/api?path=all/play/' + fileEntity.id)
+      .setPath(PLAY_PATH + fileEntity.id)
       .setToPlayable()
       .setPlot(this.buildPlot(fileEntity))
       .setSize(fileEntity.size)
@@ -532,6 +542,52 @@ export class AllFilesService {
     }
 
     return this.streamerFacade.streamVideoFile(request, response, fileEntity);
+  }
+
+  /**
+   * For players' "Up next" popup: the file (playing) and the episode right
+   * after it in order, watched or not (getNextInOrder), hidden files and
+   * samples left out.
+   */
+  async getUpNext(fileId: string): Promise<UpNextDto> {
+    const id = parseInt(fileId);
+    const fileEntity = isNaN(id)
+      ? null
+      : await this.videoFilesFacade.getFile(id);
+    if (fileEntity === null) {
+      throw new NotFoundException(`id #${fileId} not found`);
+    }
+
+    const titleEntity = fileEntity.titleId
+      ? await this.videoFilesFacade.getTitleWithFiles(fileEntity.titleId)
+      : null;
+    if (titleEntity === null) {
+      return { current: null, next: null, popupAt: UP_NEXT_AT };
+    }
+
+    const files = [...titleEntity.files].sort(compareFiles);
+    const next =
+      titleEntity.type === TitleTypeEnum.show
+        ? getNextInOrder(files, fileEntity)
+        : null;
+    const art = await this.artworkService.getIndex();
+    const describe = (episode: FileEntity): UpNextEpisode => ({
+      fileId: episode.id,
+      titleId: titleEntity.id,
+      title: titleEntity.title,
+      season: episode.season ?? null,
+      episode: getEpisode(episode) ?? null,
+      fileName: episode.fileName,
+      path: PLAY_PATH + episode.id,
+      duration: episode.duration ?? null,
+      ...art.forFile(episode, titleEntity, files),
+    });
+
+    return {
+      current: describe(fileEntity),
+      next: next ? describe(next) : null,
+      popupAt: UP_NEXT_AT,
+    };
   }
 
   getHRFileSize(size: number) {

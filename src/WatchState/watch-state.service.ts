@@ -6,9 +6,9 @@ import { FileEntity } from '../Shared/Entity/file.entity';
 import { TitleTypeEnum } from '../Shared/Enum/title-type.enum';
 import {
   compareFiles,
-  getEpisode,
   getEpisodeKey,
   getReleaseFolder,
+  groupEpisodes,
   isSample,
 } from '../Shared/Util/file-order';
 import { PlaybackReport } from './Dto/playback-report.dto';
@@ -247,20 +247,7 @@ export class WatchStateService {
   ): FileEntity | null {
     // after an episode the next episode, after a special (season 0) the next
     // numbered special; extras without a number are never "next"
-    const inSpecials = after.season === 0;
-    const episodes = new Map<string, FileEntity[]>();
-    for (const fileEntity of sortedFiles) {
-      if (
-        isSample(fileEntity) ||
-        (fileEntity.season === 0) !== inSpecials ||
-        (inSpecials && getEpisode(fileEntity) === undefined)
-      ) {
-        continue;
-      }
-      const key = getEpisodeKey(fileEntity);
-      episodes.set(key, [...(episodes.get(key) ?? []), fileEntity]);
-    }
-
+    const episodes = groupEpisodes(sortedFiles, after);
     const keys = [...episodes.keys()];
     const index = keys.indexOf(getEpisodeKey(after));
     if (index === -1) {

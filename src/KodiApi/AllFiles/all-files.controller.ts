@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 import { TitleTypeEnum } from '../../Shared/Enum/title-type.enum';
 import { KodiApiResponse } from '../Dto/kodi-api-response.type';
 import NotificationResponse from '../Dto/notification-response.dto';
+import { UpNextDto } from './up-next.dto';
 
 @Controller('api/all')
 export class AllFilesController {
@@ -121,6 +122,12 @@ export class AllFilesController {
     @Res() response: Response,
   ): Promise<void> {
     return this.allFilesService.play(fileId, request, response);
+  }
+
+  /** plain JSON for players' "Up next": the file and the episode after it */
+  @Get('next/:fileId')
+  getUpNext(@Param('fileId') fileId: string): Promise<UpNextDto> {
+    return this.allFilesService.getUpNext(fileId);
   }
 
   /** versionId: any file of a version (release) of the season */
